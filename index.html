@@ -207,7 +207,7 @@ const APPS = {
 };
 /* Common mis-hears from voice → the real app key */
 const APP_ALIASES = {
-  'clauda':'claude','claud':'claude','claude ai':'claude','cloud':'claude','claw':'claude',
+  'claude ai':'claude',
   'granolla':'granola','granala':'granola','granular':'granola',
   'g mail':'gmail','you tube':'youtube','hub spot':'hubspot','linked in':'linkedin'
 };
@@ -218,7 +218,7 @@ function resolveApp(name){
   if(APPS[name]) return name;
   let k=Object.keys(APPS).find(k=>name.includes(k)||k.includes(name));
   if(k) return k;
-  // fuzzy: nearest known app within a small edit distance (catches "clauda" -> "claude")
+  // fuzzy: nearest known app within a small edit distance (catches minor mishears)
   let best=null,bd=3;
   for(const key of Object.keys(APPS)){ const d=lev(name,key); if(d<bd){bd=d;best=key;} }
   return best;
