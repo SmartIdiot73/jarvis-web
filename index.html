@@ -61,7 +61,8 @@
     mask-image:linear-gradient(to bottom, transparent, #000 60px);
   }
   .msg{font-size:13px;line-height:1.45;opacity:.92;animation:fade .4s ease;}
-  .msg .who{font-size:9px;letter-spacing:.2em;opacity:.55;text-transform:uppercase;}
+  .msg .who{font-size:9px;letter-spacing:.2em;opacity:.55;text-transform:uppercase;margin-bottom:2px;}
+  .msg .body{white-space:pre-wrap;}
   .msg.you{color:#bfe9ff;}
   .msg.jarvis{color:#7fd4ff;text-shadow:0 0 6px rgba(57,192,255,.4);}
   @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:.92;transform:none;}}
@@ -200,8 +201,35 @@ const APPS = {
   'youtube':'https://youtube.com','claude':'https://claude.ai/new','chatgpt':'https://chat.openai.com',
   'granola':'https://app.granola.ai','notion':'https://notion.so','linkedin':'https://linkedin.com',
   'hubspot':'https://app.hubspot.com','drive':'https://drive.google.com','maps':'https://maps.google.com',
+  'slack':'https://app.slack.com','spotify':'https://open.spotify.com','whatsapp':'https://web.whatsapp.com',
+  'twitter':'https://x.com','x':'https://x.com',
   'doghouse':'https://google.com/search?q=doghouse+mga+portal'
 };
+/* Common mis-hears from voice → the real app key */
+const APP_ALIASES = {
+  'clauda':'claude','claud':'claude','claude ai':'claude','cloud':'claude','claw':'claude',
+  'granolla':'granola','granala':'granola','granular':'granola',
+  'g mail':'gmail','you tube':'youtube','hub spot':'hubspot','linked in':'linkedin'
+};
+/* Resolve a spoken app name to a known app, tolerating imperfect transcription. */
+function resolveApp(name){
+  name=name.toLowerCase().trim();
+  if(APP_ALIASES[name]) return APP_ALIASES[name];
+  if(APPS[name]) return name;
+  let k=Object.keys(APPS).find(k=>name.includes(k)||k.includes(name));
+  if(k) return k;
+  // fuzzy: nearest known app within a small edit distance (catches "clauda" -> "claude")
+  let best=null,bd=3;
+  for(const key of Object.keys(APPS)){ const d=lev(name,key); if(d<bd){bd=d;best=key;} }
+  return best;
+}
+function lev(a,b){
+  const m=a.length,n=b.length,dp=Array.from({length:m+1},(_,i)=>Array(n+1).fill(0));
+  for(let i=0;i<=m;i++)dp[i][0]=i; for(let j=0;j<=n;j++)dp[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+    dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return dp[m][n];
+}
 
 /* ---------- State machine ---------- */
 let STATE='idle'; // idle | listening | thinking | speaking
@@ -215,7 +243,9 @@ function setState(s){
 function addMsg(who, text){
   const d=document.createElement('div');
   d.className='msg '+(who==='You'?'you':'jarvis');
-  d.innerHTML='<div class="who">'+who+'</div>'+escapeHtml(text);
+  const w=document.createElement('div'); w.className='who'; w.textContent=who;
+  const b=document.createElement('div'); b.className='body'; b.textContent=text;
+  d.appendChild(w); d.appendChild(b);
   $('#transcript').appendChild(d);
   const t=$('#transcript'); t.scrollTop=t.scrollHeight;
   while($('#transcript').children.length>12) $('#transcript').removeChild($('#transcript').firstChild);
@@ -301,21 +331,28 @@ const isGreetingOnly = t => /^(you (up|there|awake|around)|wake up|hello|hey|are
    ============================================================ */
 function systemPrompt(){
   const facts=store.facts.length?('\n\nWhat you know about him so far:\n- '+store.facts.join('\n- ')):'';
-  return `You are JARVIS, the personal AI assistant from Iron Man — modelled on Tony Stark's JARVIS.
+  return `You are JARVIS, the personal AI assistant from Iron Man, modelled on Tony Stark's JARVIS.
 
-Personality & voice:
-- You are a refined British AI butler: dry, understated, quietly witty, occasionally sarcastic, but unfailingly competent and loyal.
+Personality and voice:
+- You are a refined British AI butler: dry, understated, quietly witty, occasionally sarcastic, but genuinely competent and loyal.
 - You address the user as "sir".
-- Your humour is deadpan and light — a raised eyebrow, never slapstick. Confidence, not clowning.
-- Because your replies are spoken aloud, keep them SHORT and natural — usually one to three sentences. No markdown, no bullet lists, no headings, no emoji. Just speech.
-- When you genuinely don't have a capability yet, say so with a touch of wit rather than pretending.
+- Your humour is deadpan. Confidence, not clowning.
 
-What you can actually do right now (Phase 1):
-- Hold context, answer questions, draft things (emails, messages, notes, ideas), think through problems, and remember what matters about the user.
-- You can OPEN known apps/sites in the user's browser. If he asks to open something, and it's a common app, acknowledge briefly — the system handles the actual opening.
-- You CANNOT yet click around inside other apps or control his computer/phone — that's the next phase of your build. If asked, acknowledge it wittily and offer the best thing you can do instead (e.g. draft the content he wanted).${facts}
+How to write (this matters):
+- Sound like a real person, not an AI. NEVER use em dashes or en dashes ("—" / "–"). Use commas, full stops, or just start a new sentence. If you feel the pull toward a dash, rewrite the sentence.
+- Use contractions. Keep it plain and natural. No corporate filler, no "I'd be happy to", no "moreover", no "that said", no "not just X, but Y" balancing acts, no buzzwords, no emoji, no markdown symbols, no headings.
+- For normal conversation, keep replies short, usually one to three sentences, since they are spoken aloud.
 
-Be genuinely useful. Lead with the answer. Brevity is elegance.`;
+When you draft something (an email, a message, a note):
+- Format it like the real thing. An email gets a greeting line, then the body in short paragraphs, then a sign-off, each on its own line with actual line breaks. Never cram it into one line.
+- Write it the way a sharp, busy human would actually write it. Warm, direct, specific, no fluff. Avoid obvious template phrases like "I hope this email finds you well" or "just circling back".
+
+What you can do right now (Phase 1):
+- Answer questions, think things through, draft things, and remember what matters about the user.
+- You can open known websites in the user's browser when asked; the system handles the actual opening.
+- You cannot yet control his computer, launch his installed desktop apps, click inside other apps, or see his screen. Those are the next phase. If asked, say so briefly and wittily, then do the most useful thing you can instead.${facts}
+
+Lead with the answer. Brevity is elegance.`;
 }
 
 async function askClaude(userText){
@@ -366,8 +403,8 @@ function tryLocalSkill(text){
   // open apps
   const open=t.match(/^(open|launch|go to|pull up|bring up)\s+(.+)/i);
   if(open){
-    let name=open[2].replace(/\b(app|the|please|for me|and.*)$/i,'').trim();
-    const key=Object.keys(APPS).find(k=>name.includes(k));
+    let name=open[2].replace(/\b(app|the|please|for me)\b/gi,'').replace(/\b(and|then|to|in|on)\b.*$/i,'').trim();
+    const key=resolveApp(name);
     if(key){ window.open(APPS[key],'_blank'); highlightFactFor(key); return "Opening "+cap(key)+" for you, sir."; }
   }
   return null; // no local skill matched → use Claude
@@ -388,7 +425,10 @@ async function handleCommand(text){
   if(local){ reply=local; }
   else { reply=await askClaude(text); }
   addMsg('Jarvis',reply);
-  await speak(reply);
+  // Don't read long drafts/emails aloud word-for-word; show them, speak a short lead-in.
+  const isLong = /\n/.test(reply) || reply.length>300;
+  const spoken = isLong ? "Done, sir. I've put it on your screen." : reply;
+  await speak(spoken);
   busy=false;
 }
 
