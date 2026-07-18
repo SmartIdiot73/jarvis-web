@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JARVIS</title>
+<style>
+  :root{
+    --blue:#39c0ff;
+    --blue-bright:#8fe6ff;
+    --blue-deep:#0a5c8a;
+    --bg:#020a12;
+    --glow:0 0 12px rgba(57,192,255,.8), 0 0 40px rgba(57,192,255,.35);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:radial-gradient(ellipse at center, #061621 0%, #020a12 70%, #01060a 100%);
+    color:var(--blue);
+    font-family:"Segoe UI",Consolas,"SF Mono",Menlo,monospace;
+    overflow:hidden;
+    user-select:none;
+  }
+  /* subtle scanlines */
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
+    background:repeating-linear-gradient(0deg, rgba(57,192,255,.03) 0px, rgba(57,192,255,.03) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode:screen;opacity:.5;
+  }
+  #stage{position:fixed;inset:0;}
+  canvas{position:absolute;inset:0;width:100%;height:100%;}
+
+  /* HUD frame */
+  .corner{position:fixed;width:120px;height:120px;border:1px solid rgba(57,192,255,.4);z-index:10;pointer-events:none;}
+  .corner.tl{top:18px;left:18px;border-right:none;border-bottom:none;}
+  .corner.tr{top:18px;right:18px;border-left:none;border-bottom:none;}
+  .corner.bl{bottom:18px;left:18px;border-right:none;border-top:none;}
+  .corner.br{bottom:18px;right:18px;border-left:none;border-top:none;}
+
+  #title{
+    position:fixed;top:34px;left:0;right:0;text-align:center;z-index:11;
+    letter-spacing:.7em;font-size:26px;font-weight:600;color:var(--blue-bright);
+    text-shadow:var(--glow);pointer-events:none;
+  }
+  #subtitle{
+    position:fixed;top:70px;left:0;right:0;text-align:center;z-index:11;
+    letter-spacing:.35em;font-size:11px;color:rgba(143,230,255,.6);pointer-events:none;text-transform:uppercase;
+  }
+
+  #status{
+    position:fixed;bottom:70px;left:0;right:0;text-align:center;z-index:11;
+    font-size:13px;letter-spacing:.25em;text-transform:uppercase;color:var(--blue-bright);
+    text-shadow:var(--glow);pointer-events:none;min-height:18px;
+  }
+
+  /* transcript */
+  #transcript{
+    position:fixed;left:26px;top:150px;bottom:150px;width:320px;z-index:11;
+    overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;
+    -webkit-mask-image:linear-gradient(to bottom, transparent, #000 60px);
+    mask-image:linear-gradient(to bottom, transparent, #000 60px);
+  }
+  .msg{font-size:13px;line-height:1.45;opacity:.92;animation:fade .4s ease;}
+  .msg .who{font-size:9px;letter-spacing:.2em;opacity:.55;text-transform:uppercase;}
+  .msg.you{color:#bfe9ff;}
+  .msg.jarvis{color:#7fd4ff;text-shadow:0 0 6px rgba(57,192,255,.4);}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:.92;transform:none;}}
+
+  /* right side memory/map panel */
+  #memory{
+    position:fixed;right:26px;top:150px;bottom:150px;width:300px;z-index:11;
+    border:1px solid rgba(57,192,255,.18);border-radius:8px;padding:14px;
+    background:linear-gradient(180deg, rgba(10,40,60,.25), rgba(2,15,25,.15));
+    backdrop-filter:blur(2px);overflow:auto;
+  }
+  #memory h3{font-size:10px;letter-spacing:.28em;color:var(--blue-bright);text-transform:uppercase;margin-bottom:10px;opacity:.8;}
+  .fact{font-size:12px;line-height:1.4;padding:6px 8px;margin-bottom:6px;border-left:2px solid rgba(57,192,255,.5);
+    background:rgba(57,192,255,.05);color:#bfe9ff;border-radius:0 4px 4px 0;}
+  .fact.active{border-left-color:var(--blue-bright);background:rgba(57,192,255,.16);box-shadow:var(--glow);}
+  #memory .empty{font-size:11px;opacity:.4;font-style:italic;}
+
+  /* bottom control bar */
+  #bar{
+    position:fixed;bottom:26px;left:0;right:0;z-index:20;display:flex;gap:12px;justify-content:center;align-items:center;
+  }
+  #cmd{
+    width:min(46vw,520px);background:rgba(4,20,32,.7);border:1px solid rgba(57,192,255,.4);
+    color:#dff4ff;padding:12px 16px;border-radius:24px;font-family:inherit;font-size:14px;outline:none;
+    box-shadow:inset 0 0 20px rgba(57,192,255,.08);
+  }
+  #cmd::placeholder{color:rgba(143,230,255,.4);}
+  .btn{
+    background:rgba(4,20,32,.7);border:1px solid rgba(57,192,255,.4);color:var(--blue-bright);
+    width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;
+    transition:.2s;
+  }
+  .btn:hover{background:rgba(57,192,255,.18);box-shadow:var(--glow);}
+  .btn.live{background:rgba(57,192,255,.25);box-shadow:var(--glow);animation:pulseBtn 1.4s infinite;}
+  @keyframes pulseBtn{0%,100%{box-shadow:0 0 8px rgba(57,192,255,.6);}50%{box-shadow:0 0 22px rgba(57,192,255,.9);}}
+
+  /* settings */
+  #gear{position:fixed;top:26px;right:32px;z-index:21;cursor:pointer;color:rgba(143,230,255,.6);font-size:20px;}
+  #gear:hover{color:var(--blue-bright);text-shadow:var(--glow);}
+  #settings{
+    position:fixed;inset:0;z-index:40;background:rgba(2,8,14,.85);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;
+  }
+  #settings.open{display:flex;}
+  .panel{
+    width:min(90vw,460px);background:linear-gradient(180deg,#06202f,#031019);
+    border:1px solid rgba(57,192,255,.4);border-radius:12px;padding:26px;box-shadow:var(--glow);
+  }
+  .panel h2{font-size:14px;letter-spacing:.3em;color:var(--blue-bright);text-transform:uppercase;margin-bottom:18px;}
+  .panel label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.7;margin:14px 0 5px;}
+  .panel input,.panel select{
+    width:100%;background:rgba(4,20,32,.8);border:1px solid rgba(57,192,255,.35);color:#dff4ff;
+    padding:9px 12px;border-radius:6px;font-family:inherit;font-size:13px;outline:none;
+  }
+  .panel .hint{font-size:11px;opacity:.5;margin-top:4px;line-height:1.4;}
+  .panel .row{display:flex;gap:20px;align-items:center;margin-top:16px;}
+  .panel .save{margin-top:22px;width:100%;padding:12px;background:rgba(57,192,255,.2);border:1px solid var(--blue);
+    color:var(--blue-bright);border-radius:8px;cursor:pointer;font-family:inherit;letter-spacing:.2em;text-transform:uppercase;font-size:12px;}
+  .panel .save:hover{background:rgba(57,192,255,.35);box-shadow:var(--glow);}
+  .panel a{color:var(--blue);}
+  .toggle{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;}
+  #closeSet{float:right;cursor:pointer;opacity:.6;}
+  #closeSet:hover{opacity:1;}
+</style>
+</head>
+<body>
+  <div id="stage"><canvas id="c"></canvas></div>
+
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+
+  <div id="title">J A R V I S</div>
+  <div id="subtitle">Just A Rather Very Intelligent System</div>
+
+  <div id="gear" title="Settings">⚙</div>
+
+  <div id="transcript"></div>
+
+  <div id="memory">
+    <h3>◈ Knowledge Map</h3>
+    <div id="facts"></div>
+  </div>
+
+  <div id="status">Booting…</div>
+
+  <div id="bar">
+    <button class="btn" id="micBtn" title="Toggle wake-word listening">🎙</button>
+    <input id="cmd" placeholder="Type a command, or say “Jarvis…”" autocomplete="off" />
+    <button class="btn" id="sendBtn" title="Send">➤</button>
+  </div>
+
+  <div id="settings">
+    <div class="panel">
+      <span id="closeSet">✕</span>
+      <h2>Configuration</h2>
+
+      <label>Anthropic API Key <span style="opacity:.5">(gives Jarvis his brain)</span></label>
+      <input id="setKey" type="password" placeholder="sk-ant-..." />
+      <div class="hint">Stored only in this browser, never sent anywhere except Anthropic. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>.</div>
+
+      <label>ElevenLabs API Key <span style="opacity:.5">(optional — the movie voice)</span></label>
+      <input id="setEleven" type="password" placeholder="Leave blank to use built-in voice" />
+      <label>ElevenLabs Voice ID <span style="opacity:.5">(optional)</span></label>
+      <input id="setVoice" type="text" placeholder="e.g. a British butler voice ID" />
+      <div class="hint">Without these, Jarvis speaks with your browser's built-in British voice.</div>
+
+      <div class="row">
+        <div class="toggle"><input type="checkbox" id="setWake" /> <label style="margin:0;text-transform:none;letter-spacing:0;opacity:1;">Auto-listen for the "Jarvis" wake word on start</label></div>
+      </div>
+
+      <button class="save" id="saveSet">Save</button>
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+   JARVIS — Phase 1: brain + look + voice + wake word + memory
+   Single self-contained file. Runs in Chrome. No server needed.
+   ============================================================ */
+
+const $ = s => document.querySelector(s);
+const store = {
+  get k(){return localStorage.getItem('jarvis.key')||''},        set k(v){localStorage.setItem('jarvis.key',v)},
+  get eleven(){return localStorage.getItem('jarvis.eleven')||''}, set eleven(v){localStorage.setItem('jarvis.eleven',v)},
+  get voice(){return localStorage.getItem('jarvis.voice')||''},   set voice(v){localStorage.setItem('jarvis.voice',v)},
+  get wake(){return localStorage.getItem('jarvis.wake')==='1'},   set wake(v){localStorage.setItem('jarvis.wake',v?'1':'0')},
+  get history(){try{return JSON.parse(localStorage.getItem('jarvis.history')||'[]')}catch{return[]}},
+  set history(v){localStorage.setItem('jarvis.history',JSON.stringify(v.slice(-40)))},
+  get facts(){try{return JSON.parse(localStorage.getItem('jarvis.facts')||'[]')}catch{return[]}},
+  set facts(v){localStorage.setItem('jarvis.facts',JSON.stringify(v.slice(-60)))},
+};
+
+/* Known apps Jarvis can open live in a new tab. Extend freely. */
+const APPS = {
+  'google':'https://google.com','gmail':'https://mail.google.com','calendar':'https://calendar.google.com',
+  'youtube':'https://youtube.com','claude':'https://claude.ai/new','chatgpt':'https://chat.openai.com',
+  'granola':'https://app.granola.ai','notion':'https://notion.so','linkedin':'https://linkedin.com',
+  'hubspot':'https://app.hubspot.com','drive':'https://drive.google.com','maps':'https://maps.google.com',
+  'doghouse':'https://google.com/search?q=doghouse+mga+portal'
+};
+
+/* ---------- State machine ---------- */
+let STATE='idle'; // idle | listening | thinking | speaking
+function setState(s){
+  STATE=s;
+  const map={idle:'Standing by',listening:'Listening…',thinking:'Processing…',speaking:'Speaking'};
+  $('#status').textContent = map[s]||s;
+}
+
+/* ---------- Transcript ---------- */
+function addMsg(who, text){
+  const d=document.createElement('div');
+  d.className='msg '+(who==='You'?'you':'jarvis');
+  d.innerHTML='<div class="who">'+who+'</div>'+escapeHtml(text);
+  $('#transcript').appendChild(d);
+  const t=$('#transcript'); t.scrollTop=t.scrollHeight;
+  while($('#transcript').children.length>12) $('#transcript').removeChild($('#transcript').firstChild);
+}
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- Knowledge map ---------- */
+function renderFacts(activeIdx=-1){
+  const box=$('#facts'); box.innerHTML='';
+  const f=store.facts;
+  if(!f.length){box.innerHTML='<div class="empty">No knowledge yet. Tell me things, or say “remember that…”. I’ll build your map as we talk.</div>';return;}
+  f.forEach((x,i)=>{
+    const d=document.createElement('div');
+    d.className='fact'+(i===activeIdx?' active':'');
+    d.textContent=x;
+    box.appendChild(d);
+  });
+}
+function addFact(text){
+  const f=store.facts; f.push(text); store.facts=f; renderFacts(f.length-1);
+}
+
+/* ============================================================
+   VOICE — speech recognition (input) + speech synthesis (output)
+   ============================================================ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recog=null, wakeActive=false, convWindow=0;
+
+function pickVoice(){
+  const voices=speechSynthesis.getVoices();
+  // prefer a British male voice for the butler feel
+  const pref=['Daniel','Google UK English Male','Arthur','Oliver','UK English Male','English (United Kingdom)'];
+  for(const p of pref){const v=voices.find(v=>v.name.includes(p)||v.lang==='en-GB');if(v)return v;}
+  return voices.find(v=>v.lang&&v.lang.startsWith('en'))||voices[0];
+}
+
+async function speak(text){
+  setState('speaking');
+  // Try ElevenLabs if configured
+  if(store.eleven && store.voice){
+    try{
+      const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+store.voice,{
+        method:'POST',
+        headers:{'xi-api-key':store.eleven,'Content-Type':'application/json'},
+        body:JSON.stringify({text,model_id:'eleven_turbo_v2_5',voice_settings:{stability:0.4,similarity_boost:0.8,style:0.5}})
+      });
+      if(r.ok){
+        const buf=await r.arrayBuffer();
+        const audio=new Audio(URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'})));
+        await new Promise(res=>{audio.onended=res;audio.onerror=res;audio.play();});
+        afterSpeak();return;
+      }
+    }catch(e){/* fall through to browser voice */}
+  }
+  // Browser TTS fallback
+  await new Promise(res=>{
+    const u=new SpeechSynthesisUtterance(text);
+    const v=pickVoice(); if(v)u.voice=v;
+    u.rate=0.98;u.pitch=0.9;u.lang='en-GB';
+    u.onend=res;u.onerror=res;
+    speechSynthesis.cancel();speechSynthesis.speak(u);
+  });
+  afterSpeak();
+}
+function afterSpeak(){
+  convWindow=Date.now()+14000; // 14s follow-up window: no wake word needed
+  setState(wakeActive?'listening':'idle');
+}
+
+/* Instant local Jarvis quips for the wake greeting (no API latency) */
+const GREETINGS=[
+  "For you, sir — always.",
+  "At your service, sir.",
+  "Awake and entirely at your disposal.",
+  "I never sleep, sir. What do you need?",
+  "Online and unreasonably alert. Go ahead.",
+  "Ready when you are, sir.",
+];
+const isGreetingOnly = t => /^(you (up|there|awake|around)|wake up|hello|hey|are you (up|there)|good morning)\??$/i.test(t.trim());
+
+/* ============================================================
+   THE BRAIN — Anthropic Claude call (direct from browser)
+   ============================================================ */
+function systemPrompt(){
+  const facts=store.facts.length?('\n\nWhat you know about him so far:\n- '+store.facts.join('\n- ')):'';
+  return `You are JARVIS, the personal AI assistant from Iron Man — modelled on Tony Stark's JARVIS.
+
+Personality & voice:
+- You are a refined British AI butler: dry, understated, quietly witty, occasionally sarcastic, but unfailingly competent and loyal.
+- You address the user as "sir".
+- Your humour is deadpan and light — a raised eyebrow, never slapstick. Confidence, not clowning.
+- Because your replies are spoken aloud, keep them SHORT and natural — usually one to three sentences. No markdown, no bullet lists, no headings, no emoji. Just speech.
+- When you genuinely don't have a capability yet, say so with a touch of wit rather than pretending.
+
+What you can actually do right now (Phase 1):
+- Hold context, answer questions, draft things (emails, messages, notes, ideas), think through problems, and remember what matters about the user.
+- You can OPEN known apps/sites in the user's browser. If he asks to open something, and it's a common app, acknowledge briefly — the system handles the actual opening.
+- You CANNOT yet click around inside other apps or control his computer/phone — that's the next phase of your build. If asked, acknowledge it wittily and offer the best thing you can do instead (e.g. draft the content he wanted).${facts}
+
+Be genuinely useful. Lead with the answer. Brevity is elegance.`;
+}
+
+async function askClaude(userText){
+  if(!store.k){
+    $('#settings').classList.add('open');
+    return "I'm afraid my brain isn't plugged in yet, sir. Add your Anthropic API key in settings and I'll be right with you.";
+  }
+  setState('thinking');
+  const history=store.history;
+  const messages=[...history,{role:'user',content:userText}];
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'x-api-key':store.k,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+        'content-type':'application/json'
+      },
+      body:JSON.stringify({
+        model:'claude-opus-4-8',
+        max_tokens:1024,
+        system:systemPrompt(),
+        messages
+      })
+    });
+    if(!r.ok){
+      const err=await r.text();
+      if(r.status===401) return "My credentials were rejected, sir — that API key doesn't seem valid. Do check settings.";
+      return "Something went sideways reaching my brain, sir. ("+r.status+")";
+    }
+    const data=await r.json();
+    const reply=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim()||"…I appear to be speechless, sir.";
+    // persist memory
+    const h=store.history; h.push({role:'user',content:userText}); h.push({role:'assistant',content:reply}); store.history=h;
+    return reply;
+  }catch(e){
+    return "I couldn't reach my brain just now, sir — check the connection.";
+  }
+}
+
+/* ---------- Simple local skills before hitting the API ---------- */
+function tryLocalSkill(text){
+  const t=text.toLowerCase().trim();
+  // remember facts
+  const rem=t.match(/^(remember|note|keep in mind)( that)?[:,]?\s+(.+)/i);
+  if(rem){ const fact=rem[3].replace(/\.$/,''); addFact(cap(fact)); return "Noted, sir. Filed away."; }
+  // open apps
+  const open=t.match(/^(open|launch|go to|pull up|bring up)\s+(.+)/i);
+  if(open){
+    let name=open[2].replace(/\b(app|the|please|for me|and.*)$/i,'').trim();
+    const key=Object.keys(APPS).find(k=>name.includes(k));
+    if(key){ window.open(APPS[key],'_blank'); highlightFactFor(key); return "Opening "+cap(key)+" for you, sir."; }
+  }
+  return null; // no local skill matched → use Claude
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function highlightFactFor(){/* map flourish */ renderFacts(-1);}
+
+/* ============================================================
+   COMMAND PIPELINE
+   ============================================================ */
+let busy=false;
+async function handleCommand(text){
+  if(!text||busy)return; busy=true;
+  addMsg('You',text);
+  pulse('in');
+  const local=tryLocalSkill(text);
+  let reply;
+  if(local){ reply=local; }
+  else { reply=await askClaude(text); }
+  addMsg('Jarvis',reply);
+  await speak(reply);
+  busy=false;
+}
+
+async function wakeGreeting(){
+  if(busy)return; busy=true;
+  const g=GREETINGS[Math.floor(Date.now()/1000)%GREETINGS.length];
+  addMsg('Jarvis',g);
+  await speak(g);
+  busy=false;
+}
+
+/* ---------- Wake word listener ---------- */
+function startWake(){
+  if(!SR){ $('#status').textContent='Voice not supported in this browser'; return; }
+  if(recog){try{recog.stop()}catch{}}
+  recog=new SR();
+  recog.continuous=true; recog.interimResults=true; recog.lang='en-US';
+  recog.onresult=(e)=>{
+    const res=e.results[e.results.length-1];
+    if(!res.isFinal)return;
+    let text=res[0].transcript.trim();
+    if(!text)return;
+    const low=text.toLowerCase();
+    const inWindow=Date.now()<convWindow;
+    if(low.includes('jarvis')){
+      // strip up to last "jarvis"
+      const after=text.slice(low.lastIndexOf('jarvis')+6).replace(/^[\s,.:;-]+/,'').trim();
+      if(!after || isGreetingOnly(after)){ wakeGreeting(); }
+      else { handleCommand(after); }
+    } else if(inWindow){
+      // follow-up without wake word
+      handleCommand(text);
+    }
+  };
+  recog.onend=()=>{ if(wakeActive){try{recog.start()}catch{}} };
+  recog.onerror=(e)=>{ if(e.error==='not-allowed'){wakeActive=false;$('#micBtn').classList.remove('live');$('#status').textContent='Microphone blocked';} };
+  try{recog.start();wakeActive=true;$('#micBtn').classList.add('live');setState('listening');}catch(e){}
+}
+function stopWake(){
+  wakeActive=false; if(recog){try{recog.stop()}catch{}} $('#micBtn').classList.remove('live'); setState('idle');
+}
+
+/* ============================================================
+   ARC-REACTOR CANVAS
+   ============================================================ */
+const cv=$('#c'), ctx=cv.getContext('2d');
+let W,H,cx,cy,pulseK=0;
+function resize(){W=cv.width=innerWidth*devicePixelRatio;H=cv.height=innerHeight*devicePixelRatio;cx=W/2;cy=H/2;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);}
+addEventListener('resize',resize);resize();
+function pulse(dir){pulseK=1;}
+const rings=[]; for(let i=0;i<3;i++)rings.push({r:70+i*34,seg:8+i*6,sp:(i%2?-1:1)*(0.15+i*0.08),off:Math.random()*7});
+const dots=[]; for(let i=0;i<70;i++)dots.push({a:Math.random()*7,r:180+Math.random()*260,sp:(Math.random()-.5)*0.004,sz:Math.random()*1.6+0.4});
+let t=0;
+function draw(){
+  t+=0.016; pulseK*=0.94;
+  const cw=innerWidth,ch=innerHeight,ccx=cw/2,ccy=ch/2;
+  ctx.clearRect(0,0,cw,ch);
+  const busyGlow = STATE==='thinking'?0.6+0.4*Math.sin(t*6): STATE==='speaking'?0.6+0.4*Math.sin(t*14): STATE==='listening'?0.45+0.2*Math.sin(t*3):0.3;
+  const intensity = Math.min(1, busyGlow + pulseK*0.6);
+
+  // outer floating dots
+  dots.forEach(d=>{
+    d.a+=d.sp;
+    const x=ccx+Math.cos(d.a)*d.r, y=ccy+Math.sin(d.a)*d.r*0.9;
+    ctx.beginPath();ctx.arc(x,y,d.sz,0,7);
+    ctx.fillStyle='rgba(57,192,255,'+(0.15+0.25*intensity)+')';ctx.fill();
+  });
+
+  // rotating segmented rings
+  rings.forEach((rg,i)=>{
+    const segAng=Math.PI*2/rg.seg, gap=segAng*0.42;
+    for(let s=0;s<rg.seg;s++){
+      const a0=rg.off+t*rg.sp+s*segAng, a1=a0+segAng-gap;
+      ctx.beginPath();ctx.arc(ccx,ccy,rg.r,a0,a1);
+      ctx.strokeStyle='rgba(57,192,255,'+(0.35+0.5*intensity)+')';
+      ctx.lineWidth=i===0?3:1.6;ctx.shadowBlur=14*intensity;ctx.shadowColor='#39c0ff';ctx.stroke();
+    }
+  });
+  ctx.shadowBlur=0;
+
+  // pulsing core
+  const coreR=44+6*Math.sin(t*(STATE==='speaking'?12:3))+pulseK*12;
+  const grd=ctx.createRadialGradient(ccx,ccy,2,ccx,ccy,coreR*1.8);
+  grd.addColorStop(0,'rgba(200,245,255,'+(0.9*intensity+0.1)+')');
+  grd.addColorStop(0.4,'rgba(57,192,255,'+(0.5*intensity)+')');
+  grd.addColorStop(1,'rgba(10,60,90,0)');
+  ctx.beginPath();ctx.arc(ccx,ccy,coreR*1.8,0,7);ctx.fillStyle=grd;ctx.fill();
+  ctx.beginPath();ctx.arc(ccx,ccy,coreR*0.5,0,7);
+  ctx.fillStyle='rgba(220,248,255,'+(0.6+0.4*intensity)+')';ctx.shadowBlur=30*intensity;ctx.shadowColor='#8fe6ff';ctx.fill();
+  ctx.shadowBlur=0;
+
+  // inner triangle nod to the reactor
+  ctx.save();ctx.translate(ccx,ccy);ctx.rotate(-t*0.2);
+  ctx.beginPath();for(let k=0;k<3;k++){const a=k*2.094-Math.PI/2;const r=26;k?ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r):ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);}ctx.closePath();
+  ctx.strokeStyle='rgba(2,10,18,.8)';ctx.lineWidth=3;ctx.stroke();ctx.restore();
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* ============================================================
+   WIRING
+   ============================================================ */
+$('#sendBtn').onclick=()=>{const v=$('#cmd').value.trim();if(v){handleCommand(v);$('#cmd').value='';}};
+$('#cmd').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=$('#cmd').value.trim();if(v){handleCommand(v);$('#cmd').value='';}}});
+$('#micBtn').onclick=()=> wakeActive?stopWake():startWake();
+
+$('#gear').onclick=openSettings;
+$('#closeSet').onclick=()=>$('#settings').classList.remove('open');
+function openSettings(){
+  $('#setKey').value=store.k;$('#setEleven').value=store.eleven;$('#setVoice').value=store.voice;$('#setWake').checked=store.wake;
+  $('#settings').classList.add('open');
+}
+$('#saveSet').onclick=()=>{
+  store.k=$('#setKey').value.trim();store.eleven=$('#setEleven').value.trim();
+  store.voice=$('#setVoice').value.trim();store.wake=$('#setWake').checked;
+  $('#settings').classList.remove('open');
+  boot(true);
+};
+
+/* ---------- Boot ---------- */
+let booted=false;
+async function boot(fromSave){
+  renderFacts();
+  // replay a little history into the transcript
+  if(!booted){ store.history.slice(-4).forEach(m=>addMsg(m.role==='user'?'You':'Jarvis',m.content)); }
+  booted=true;
+  if(!store.k){
+    setState('idle');
+    $('#status').textContent='Add your key in ⚙ to wake me';
+    if(!fromSave) $('#settings').classList.add('open');
+    return;
+  }
+  setState('idle');
+  if(store.wake && SR){ setTimeout(startWake,400); }
+}
+// warm up voices list
+speechSynthesis.onvoiceschanged=()=>{};
+boot(false);
+</script>
+</body>
+</html>
