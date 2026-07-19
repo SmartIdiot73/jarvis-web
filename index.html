@@ -166,8 +166,8 @@
       <label>ElevenLabs API Key <span style="opacity:.5">(optional — the movie voice)</span></label>
       <input id="setEleven" type="password" placeholder="Leave blank to use built-in voice" />
       <label>ElevenLabs Voice ID <span style="opacity:.5">(optional)</span></label>
-      <input id="setVoice" type="text" placeholder="e.g. a British butler voice ID" />
-      <div class="hint">Without these, Jarvis speaks with your browser's built-in British voice.</div>
+      <input id="setVoice" type="text" placeholder="Leave blank for a default British voice" />
+      <div class="hint">With just the API key, Jarvis speaks in a polished default British voice. Add a Voice ID later to use a specific one. With no key at all, he uses your browser's built-in voice.</div>
 
       <div class="row">
         <div class="toggle"><input type="checkbox" id="setWake" /> <label style="margin:0;text-transform:none;letter-spacing:0;opacity:1;">Auto-listen for the "Jarvis" wake word on start</label></div>
@@ -282,12 +282,16 @@ function pickVoice(){
   return voices.find(v=>v.lang&&v.lang.startsWith('en'))||voices[0];
 }
 
+// If you have an ElevenLabs key but haven't picked a Voice ID, use this warm British default ("George").
+const DEFAULT_ELEVEN_VOICE='JBFqnCBsd6RMkjVDRZzb';
+
 async function speak(text){
   setState('speaking');
-  // Try ElevenLabs if configured
-  if(store.eleven && store.voice){
+  // Use ElevenLabs whenever a key is present; fall back to the default voice if no Voice ID is set.
+  if(store.eleven){
+    const voiceId = store.voice || DEFAULT_ELEVEN_VOICE;
     try{
-      const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+store.voice,{
+      const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+voiceId,{
         method:'POST',
         headers:{'xi-api-key':store.eleven,'Content-Type':'application/json'},
         body:JSON.stringify({text,model_id:'eleven_turbo_v2_5',voice_settings:{stability:0.4,similarity_boost:0.8,style:0.5}})
