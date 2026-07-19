@@ -149,8 +149,8 @@
   <div id="status">Booting…</div>
 
   <div id="bar">
-    <button class="btn" id="micBtn" title="Toggle wake-word listening">🎙</button>
-    <input id="cmd" placeholder="Type a command, or say “Jarvis…”" autocomplete="off" />
+    <button class="btn" id="micBtn" title="Hold to talk (or hold the spacebar)">🎙</button>
+    <input id="cmd" placeholder="Type, or hold 🎙 / spacebar to talk" autocomplete="off" />
     <button class="btn" id="sendBtn" title="Send">➤</button>
   </div>
 
@@ -418,6 +418,30 @@ function tryLocalSkill(text){
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function highlightFactFor(){/* map flourish */ renderFacts(-1);}
 
+/* De-AI filter: guarantees the transcript reads like a human wrote it, no matter
+   what the model returns. Kills em/en dashes and the most common AI tells. */
+function humanize(text){
+  if(!text) return text;
+  let s=text;
+  // em/en dashes used as punctuation -> a comma or plain hyphen
+  s=s.replace(/\s*[—–]\s*/g, ', ');
+  s=s.replace(/,\s*,/g, ',').replace(/\s+,/g, ',').replace(/,([^\s])/g, ', $1');
+  // a few safe, common AI-isms -> plainer words
+  const swaps=[
+    [/\bMoreover,\s*/g,'Also, '],[/\bmoreover,?\s*/gi,'also, '],
+    [/\bFurthermore,\s*/g,'And '],[/\bfurthermore,?\s*/gi,'and '],
+    [/\bIn addition,\s*/g,'Also, '],[/\bin addition,?\s*/gi,'also, '],
+    [/\butiliz(e|es|ed|ing)\b/gi,(m,x)=>'us'+({e:'e',es:'es',ed:'ed',ing:'ing'}[x])],
+    [/\bI'd be happy to\b/gi,'I can'],
+    [/\bI hope this (email|message) finds you well[.,]?\s*/gi,''],
+    [/\bjust circling back\b/gi,'following up'],
+    [/\bdelve into\b/gi,'dig into'],
+  ];
+  for(const [re,rep] of swaps) s=s.replace(re,rep);
+  s=s.replace(/[ \t]{2,}/g,' ').replace(/[ \t]+\n/g,'\n');
+  return s.trim();
+}
+
 /* ============================================================
    COMMAND PIPELINE
    ============================================================ */
@@ -429,7 +453,7 @@ async function handleCommand(text){
   const local=tryLocalSkill(text);
   let reply;
   if(local){ reply=local; }
-  else { reply=await askClaude(text); }
+  else { reply=humanize(await askClaude(text)); } // scrub AI-isms before it ever hits the screen
   addMsg('Jarvis',reply);
   // Don't read long drafts/emails aloud word-for-word; show them, speak a short lead-in.
   const isLong = /\n/.test(reply) || reply.length>300;
@@ -465,6 +489,7 @@ function processTranscript(text){
 const KEYTERMS=[...new Set([...Object.keys(APPS).map(cap),
   'Jarvis','Claude','Granola','ChatGPT','MGA','broker','trucking','insurance','underwriting','Corgi','Doghouse'])];
 let mediaStream=null, mediaRecorder=null, recChunks=[], recording=false, lastWebText='';
+let pttActive=false, pendingPtt=false; // push-to-talk (hold to talk) state
 
 async function ensureMic(){
   if(mediaStream) return mediaStream;
@@ -482,8 +507,9 @@ function startRec(){
       const blob=new Blob(recChunks,{type:'audio/webm'});
       let text=null;
       if(blob.size>1500) text=await transcribeWithScribe(blob); // skip tiny/near-silent clips
-      processTranscript(text||lastWebText); // fall back to the browser transcript if Scribe fails
-      lastWebText='';
+      const finalText=text||lastWebText; lastWebText=''; // fall back to the browser transcript if Scribe fails
+      if(pendingPtt){ pendingPtt=false; pttHandle(finalText); } // held-to-talk: always a direct command
+      else processTranscript(finalText);
     };
     mediaRecorder.start();
     recording=true;
@@ -520,9 +546,9 @@ function startWake(){
     if(store.eleven){ lastWebText=txt; return; } // Scribe transcribes for accuracy; this is the fallback
     processTranscript(txt);
   };
-  recog.onspeechstart=()=>{ if(store.eleven) startRec(); };
+  recog.onspeechstart=()=>{ if(store.eleven && !pttActive) startRec(); };
   recog.onspeechend=()=>{
-    if(!store.eleven) return;
+    if(!store.eleven || pttActive) return;
     if(recording){ stopRec(); }
     else { setTimeout(()=>{ if(lastWebText){ processTranscript(lastWebText); lastWebText=''; } }, 400); }
   };
@@ -535,6 +561,28 @@ function stopWake(){
   stopRec();
   if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
   $('#micBtn').classList.remove('live'); setState('idle');
+}
+
+/* ---------- Push-to-talk (hold a button, talk with pauses, release to send) ---------- */
+async function pttStart(){
+  if(pttActive||busy) return;
+  pttActive=true; setState('listening');
+  await ensureMic();
+  if(!mediaStream){ pttActive=false; setState(wakeActive?'listening':'idle'); return; }
+  startRec(); // records the whole held segment, pauses and all, until release
+}
+function pttStop(){
+  if(!pttActive) return;
+  pttActive=false;
+  if(recording){ pendingPtt=true; stopRec(); }
+  else setState(wakeActive?'listening':'idle');
+}
+function pttHandle(text){
+  text=(text||'').trim();
+  if(!text){ setState(wakeActive?'listening':'idle'); return; }
+  const low=text.toLowerCase();
+  if(low.startsWith('jarvis')) text=text.slice(6).replace(/^[\s,.:;-]+/,'').trim();
+  if(text) handleCommand(text); else setState(wakeActive?'listening':'idle');
 }
 
 /* ============================================================
@@ -600,7 +648,19 @@ draw();
    ============================================================ */
 $('#sendBtn').onclick=()=>{const v=$('#cmd').value.trim();if(v){handleCommand(v);$('#cmd').value='';}};
 $('#cmd').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=$('#cmd').value.trim();if(v){handleCommand(v);$('#cmd').value='';}}});
-$('#micBtn').onclick=()=> wakeActive?stopWake():startWake();
+
+// Mic button = HOLD to talk. Spacebar (when not typing) does the same.
+const micBtn=$('#micBtn');
+const pttDown=e=>{ if(e){e.preventDefault();} micBtn.classList.add('live'); pttStart(); };
+const pttUp=e=>{ if(e){e.preventDefault();} micBtn.classList.remove('live'); pttStop(); };
+micBtn.addEventListener('mousedown',pttDown);
+micBtn.addEventListener('mouseup',pttUp);
+micBtn.addEventListener('mouseleave',e=>{ if(pttActive) pttUp(e); });
+micBtn.addEventListener('touchstart',pttDown,{passive:false});
+micBtn.addEventListener('touchend',pttUp);
+function isTyping(){ const a=document.activeElement; return a && (a.id==='cmd'||a.tagName==='INPUT'||a.tagName==='TEXTAREA'); }
+addEventListener('keydown',e=>{ if(e.code==='Space' && !e.repeat && !isTyping()){ e.preventDefault(); micBtn.classList.add('live'); pttStart(); } });
+addEventListener('keyup',e=>{ if(e.code==='Space' && !isTyping()){ e.preventDefault(); micBtn.classList.remove('live'); pttStop(); } });
 
 $('#gear').onclick=openSettings;
 $('#closeSet').onclick=()=>$('#settings').classList.remove('open');
