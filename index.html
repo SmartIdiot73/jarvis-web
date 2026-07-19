@@ -313,7 +313,7 @@ async function speak(text){
       if(r.ok){
         const buf=await r.arrayBuffer();
         const audio=new Audio(URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'})));
-        await new Promise(res=>{audio.onended=res;audio.onerror=res;audio.play();});
+        await new Promise(res=>{const done=()=>res();audio.onended=done;audio.onerror=done;audio.play().catch(done);setTimeout(done,20000);});
         afterSpeak();return;
       }
     }catch(e){/* fall through to browser voice */}
@@ -325,6 +325,7 @@ async function speak(text){
     u.rate=0.98;u.pitch=0.9;u.lang='en-GB';
     u.onend=res;u.onerror=res;
     speechSynthesis.cancel();speechSynthesis.speak(u);
+    setTimeout(res,20000); // safety: never hang forever
   });
   afterSpeak();
 }
@@ -468,26 +469,30 @@ function humanize(text){
 let busy=false;
 async function handleCommand(text){
   if(!text||busy)return; busy=true;
-  addMsg('You',text);
-  pulse('in');
-  const local=tryLocalSkill(text);
-  let reply;
-  if(local){ reply=local; }
-  else { reply=humanize(await askClaude(text)); } // scrub AI-isms before it ever hits the screen
-  addMsg('Jarvis',reply);
-  // Don't read long drafts/emails aloud word-for-word; show them, speak a short lead-in.
-  const isLong = /\n/.test(reply) || reply.length>300;
-  const spoken = isLong ? "Done, sir. I've put it on your screen." : reply;
-  await speak(spoken);
-  busy=false;
+  try{
+    addMsg('You',text);
+    pulse('in');
+    const local=tryLocalSkill(text);
+    let reply;
+    if(local){ reply=local; }
+    else { reply=humanize(await askClaude(text)); } // scrub AI-isms before it ever hits the screen
+    addMsg('Jarvis',reply);
+    // Don't read long drafts/emails aloud word-for-word; show them, speak a short lead-in.
+    const isLong = /\n/.test(reply) || reply.length>300;
+    const spoken = isLong ? "Done, sir. I've put it on your screen." : reply;
+    await speak(spoken);
+  }catch(e){ /* never leave him wedged */ }
+  finally{ busy=false; }
 }
 
 async function wakeGreeting(){
   if(busy)return; busy=true;
-  const g=GREETINGS[Math.floor(Date.now()/1000)%GREETINGS.length];
-  addMsg('Jarvis',g);
-  await speak(g);
-  busy=false;
+  try{
+    const g=GREETINGS[Math.floor(Date.now()/1000)%GREETINGS.length];
+    addMsg('Jarvis',g);
+    await speak(g);
+  }catch(e){}
+  finally{ busy=false; }
 }
 
 /* Turn a heard utterance into an action: wake word, follow-up window, or command. */
@@ -509,7 +514,7 @@ function processTranscript(text){
 const KEYTERMS=[...new Set([...Object.keys(APPS).map(cap),
   'Jarvis','Claude','Granola','ChatGPT','MGA','broker','trucking','insurance','underwriting','Corgi','Doghouse'])];
 let mediaStream=null, mediaRecorder=null, recChunks=[], recording=false, lastWebText='';
-let pttActive=false, pendingPtt=false; // push-to-talk (hold to talk) state
+let pttActive=false, pendingPtt=false, pttRecog=null; // push-to-talk (hold to talk) state
 
 async function ensureMic(){
   if(mediaStream) return mediaStream;
@@ -538,17 +543,22 @@ function startRec(){
 function stopRec(){ if(mediaRecorder&&recording){ try{mediaRecorder.stop()}catch{} } }
 
 async function transcribeWithScribe(blob){
-  try{
+  const attempt=async(withKeyterms)=>{
     const fd=new FormData();
     fd.append('model_id','scribe_v2');
     fd.append('file',blob,'command.webm');
-    fd.append('keyterms',KEYTERMS.join(','));
+    if(withKeyterms) fd.append('keyterms',KEYTERMS.join(','));
     const r=await fetch('https://api.elevenlabs.io/v1/speech-to-text',{
       method:'POST', headers:{'xi-api-key':store.eleven}, body:fd
     });
     if(!r.ok) return null;
     const data=await r.json();
     return (data.text||'').trim();
+  };
+  try{
+    let t=await attempt(true);
+    if(t===null) t=await attempt(false); // keyterms format can get a request rejected; retry plain
+    return t;
   }catch(e){ return null; }
 }
 
@@ -586,23 +596,37 @@ function stopWake(){
 /* ---------- Push-to-talk (hold a button, talk with pauses, release to send) ---------- */
 async function pttStart(){
   if(pttActive||busy) return;
-  pttActive=true; setState('listening');
+  pttActive=true; lastWebText=''; setState('listening');
+  // Browser recognition = a reliable free fallback transcript, in case Scribe is unavailable.
+  if(SR && !wakeActive){
+    try{
+      pttRecog=new SR(); pttRecog.continuous=true; pttRecog.interimResults=true; pttRecog.lang='en-US';
+      pttRecog.onresult=(e)=>{ const r=e.results[e.results.length-1]; if(r.isFinal) lastWebText=(lastWebText+' '+(r[0].transcript||'')).trim(); };
+      pttRecog.onerror=()=>{};
+      pttRecog.start();
+    }catch(e){ pttRecog=null; }
+  }
   await ensureMic();
-  if(!mediaStream){ pttActive=false; setState(wakeActive?'listening':'idle'); return; }
-  startRec(); // records the whole held segment, pauses and all, until release
+  if(pttActive && mediaStream) startRec(); // higher-accuracy Scribe path when the mic is available
 }
 function pttStop(){
   if(!pttActive) return;
   pttActive=false;
-  if(recording){ pendingPtt=true; stopRec(); }
-  else setState(wakeActive?'listening':'idle');
+  if(pttRecog){ try{pttRecog.stop()}catch{} pttRecog=null; }
+  if(recording){ pendingPtt=true; stopRec(); } // onstop -> Scribe (or lastWebText) -> pttHandle
+  else setTimeout(()=>pttHandle(lastWebText), 600); // no Scribe clip; use what recognition heard
 }
 function pttHandle(text){
   text=(text||'').trim();
-  if(!text){ setState(wakeActive?'listening':'idle'); return; }
+  if(!text){ // never go silent — tell him you didn't catch it
+    addMsg('Jarvis',"I didn't catch that, sir. Try again.");
+    speak("I didn't catch that, sir.");
+    return;
+  }
   const low=text.toLowerCase();
   if(low.startsWith('jarvis')) text=text.slice(6).replace(/^[\s,.:;-]+/,'').trim();
-  if(text) handleCommand(text); else setState(wakeActive?'listening':'idle');
+  if(text) handleCommand(text);
+  else { addMsg('Jarvis',"Yes, sir?"); speak("Yes, sir?"); }
 }
 
 /* ============================================================
