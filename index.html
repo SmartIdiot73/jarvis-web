@@ -253,6 +253,18 @@ function addMsg(who, text){
   while($('#transcript').children.length>12) $('#transcript').removeChild($('#transcript').firstChild);
 }
 function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+// A Jarvis message with a real clickable link (used when the browser blocks a pop-up).
+function addLinkMsg(label, url){
+  const d=document.createElement('div');
+  d.className='msg jarvis';
+  const w=document.createElement('div'); w.className='who'; w.textContent='Jarvis';
+  const b=document.createElement('div'); b.className='body';
+  const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener';
+  a.textContent=label; a.style.color='var(--blue-bright)'; a.style.textDecoration='underline';
+  b.appendChild(a); d.appendChild(w); d.appendChild(b);
+  $('#transcript').appendChild(d);
+  const t=$('#transcript'); t.scrollTop=t.scrollHeight;
+}
 
 /* ---------- Knowledge map ---------- */
 function renderFacts(activeIdx=-1){
@@ -411,7 +423,15 @@ function tryLocalSkill(text){
   if(open){
     let name=open[2].replace(/\b(app|the|please|for me)\b/gi,'').replace(/\b(and|then|to|in|on)\b.*$/i,'').trim();
     const key=resolveApp(name);
-    if(key){ window.open(APPS[key],'_blank'); highlightFactFor(key); return "Opening "+cap(key)+" for you, sir."; }
+    if(key){
+      const url=APPS[key];
+      const win=window.open(url,'_blank'); // may be null if the pop-up blocker stops it
+      highlightFactFor(key);
+      if(win) return "Opening "+cap(key)+" for you, sir.";
+      // Blocked by the browser's pop-up blocker (common for voice-triggered opens).
+      addLinkMsg('Open '+cap(key)+' →', url);
+      return "Your browser blocked that pop-up, sir. Tap the link I left, or allow pop-ups for this site once and I'll open things instantly from now on.";
+    }
   }
   return null; // no local skill matched → use Claude
 }
