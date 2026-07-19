@@ -207,7 +207,9 @@ const APPS = {
 };
 /* Common mis-hears from voice → the real app key */
 const APP_ALIASES = {
-  'claude ai':'claude',
+  // common speech-to-text mis-hears of "Claude"
+  'claude ai':'claude','quad':'claude','claud':'claude','clawed':'claude','cloud':'claude',
+  'clod':'claude','quaid':'claude','clode':'claude','chlaude':'claude','collide':'claude','clawd':'claude',
   'granolla':'granola','granala':'granola','granular':'granola',
   'g mail':'gmail','you tube':'youtube','hub spot':'hubspot','linked in':'linkedin'
 };
@@ -315,7 +317,7 @@ async function speak(text){
   afterSpeak();
 }
 function afterSpeak(){
-  convWindow=Date.now()+14000; // 14s follow-up window: no wake word needed
+  convWindow=Date.now()+10000; // 10s follow-up window: no wake word needed
   setState(wakeActive?'listening':'idle');
 }
 
