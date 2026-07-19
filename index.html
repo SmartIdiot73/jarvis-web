@@ -163,11 +163,11 @@
       <input id="setKey" type="password" placeholder="sk-ant-..." />
       <div class="hint">Stored only in this browser, never sent anywhere except Anthropic. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>.</div>
 
-      <label>ElevenLabs API Key <span style="opacity:.5">(optional — the movie voice)</span></label>
+      <label>ElevenLabs API Key <span style="opacity:.5">(voice + better hearing)</span></label>
       <input id="setEleven" type="password" placeholder="Leave blank to use built-in voice" />
       <label>ElevenLabs Voice ID <span style="opacity:.5">(optional)</span></label>
       <input id="setVoice" type="text" placeholder="Leave blank for a default British voice" />
-      <div class="hint">With just the API key, Jarvis speaks in a polished default British voice. Add a Voice ID later to use a specific one. With no key at all, he uses your browser's built-in voice.</div>
+      <div class="hint">The ElevenLabs key powers both the voice and the sharper transcription. With just the key, Jarvis speaks in a polished default British voice; add a Voice ID later for a specific one.</div>
 
       <div class="row">
         <div class="toggle"><input type="checkbox" id="setWake" /> <label style="margin:0;text-transform:none;letter-spacing:0;opacity:1;">Auto-listen for the "Jarvis" wake word on start</label></div>
@@ -446,35 +446,95 @@ async function wakeGreeting(){
   busy=false;
 }
 
+/* Turn a heard utterance into an action: wake word, follow-up window, or command. */
+function processTranscript(text){
+  text=(text||'').trim(); if(!text||busy)return;
+  const low=text.toLowerCase();
+  const inWindow=Date.now()<convWindow;
+  if(low.includes('jarvis')){
+    const after=text.slice(low.lastIndexOf('jarvis')+6).replace(/^[\s,.:;-]+/,'').trim();
+    if(!after || isGreetingOnly(after)){ wakeGreeting(); }
+    else { handleCommand(after); }
+  } else if(inWindow){
+    handleCommand(text);
+  }
+}
+
+/* ---- ElevenLabs Scribe: record each utterance and transcribe it far more accurately.
+   A custom dictionary (keyterms) is loaded so domain words like Claude/Granola/MGA aren't mangled. ---- */
+const KEYTERMS=[...new Set([...Object.keys(APPS).map(cap),
+  'Jarvis','Claude','Granola','ChatGPT','MGA','broker','trucking','insurance','underwriting','Corgi','Doghouse'])];
+let mediaStream=null, mediaRecorder=null, recChunks=[], recording=false, lastWebText='';
+
+async function ensureMic(){
+  if(mediaStream) return mediaStream;
+  try{ mediaStream=await navigator.mediaDevices.getUserMedia({audio:true}); }catch(e){ mediaStream=null; }
+  return mediaStream;
+}
+function startRec(){
+  if(recording||busy||STATE==='speaking'||!mediaStream) return;
+  try{
+    recChunks=[];
+    mediaRecorder=new MediaRecorder(mediaStream);
+    mediaRecorder.ondataavailable=ev=>{ if(ev.data&&ev.data.size)recChunks.push(ev.data); };
+    mediaRecorder.onstop=async()=>{
+      recording=false;
+      const blob=new Blob(recChunks,{type:'audio/webm'});
+      let text=null;
+      if(blob.size>1500) text=await transcribeWithScribe(blob); // skip tiny/near-silent clips
+      processTranscript(text||lastWebText); // fall back to the browser transcript if Scribe fails
+      lastWebText='';
+    };
+    mediaRecorder.start();
+    recording=true;
+  }catch(e){ recording=false; }
+}
+function stopRec(){ if(mediaRecorder&&recording){ try{mediaRecorder.stop()}catch{} } }
+
+async function transcribeWithScribe(blob){
+  try{
+    const fd=new FormData();
+    fd.append('model_id','scribe_v2');
+    fd.append('file',blob,'command.webm');
+    fd.append('keyterms',KEYTERMS.join(','));
+    const r=await fetch('https://api.elevenlabs.io/v1/speech-to-text',{
+      method:'POST', headers:{'xi-api-key':store.eleven}, body:fd
+    });
+    if(!r.ok) return null;
+    const data=await r.json();
+    return (data.text||'').trim();
+  }catch(e){ return null; }
+}
+
 /* ---------- Wake word listener ---------- */
 function startWake(){
   if(!SR){ $('#status').textContent='Voice not supported in this browser'; return; }
+  if(store.eleven) ensureMic(); // warm up the mic for Scribe recording
   if(recog){try{recog.stop()}catch{}}
   recog=new SR();
   recog.continuous=true; recog.interimResults=true; recog.lang='en-US';
   recog.onresult=(e)=>{
     const res=e.results[e.results.length-1];
     if(!res.isFinal)return;
-    let text=res[0].transcript.trim();
-    if(!text)return;
-    const low=text.toLowerCase();
-    const inWindow=Date.now()<convWindow;
-    if(low.includes('jarvis')){
-      // strip up to last "jarvis"
-      const after=text.slice(low.lastIndexOf('jarvis')+6).replace(/^[\s,.:;-]+/,'').trim();
-      if(!after || isGreetingOnly(after)){ wakeGreeting(); }
-      else { handleCommand(after); }
-    } else if(inWindow){
-      // follow-up without wake word
-      handleCommand(text);
-    }
+    const txt=(res[0].transcript||'').trim();
+    if(store.eleven){ lastWebText=txt; return; } // Scribe transcribes for accuracy; this is the fallback
+    processTranscript(txt);
+  };
+  recog.onspeechstart=()=>{ if(store.eleven) startRec(); };
+  recog.onspeechend=()=>{
+    if(!store.eleven) return;
+    if(recording){ stopRec(); }
+    else { setTimeout(()=>{ if(lastWebText){ processTranscript(lastWebText); lastWebText=''; } }, 400); }
   };
   recog.onend=()=>{ if(wakeActive){try{recog.start()}catch{}} };
   recog.onerror=(e)=>{ if(e.error==='not-allowed'){wakeActive=false;$('#micBtn').classList.remove('live');$('#status').textContent='Microphone blocked';} };
   try{recog.start();wakeActive=true;$('#micBtn').classList.add('live');setState('listening');}catch(e){}
 }
 function stopWake(){
-  wakeActive=false; if(recog){try{recog.stop()}catch{}} $('#micBtn').classList.remove('live'); setState('idle');
+  wakeActive=false; if(recog){try{recog.stop()}catch{}}
+  stopRec();
+  if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
+  $('#micBtn').classList.remove('live'); setState('idle');
 }
 
 /* ============================================================
