@@ -253,7 +253,10 @@ DOING ACTIONS (important): When the user wants you to actually DO something, emi
 - Open a specific Gmail account: [[[GMAIL:email-or-number]]] (e.g. [[[GMAIL:ryan@corgitrucking.com]]] or [[[GMAIL:2]]]).
 - Draft an email/message the user may send: put ONLY the sendable content (greeting, body, sign-off) between [[[DRAFT]]] and [[[/DRAFT]]]. Put NOTHING else inside: no "Subject:" line, no commentary, no instructions. Give the subject as [[[SUBJECT:the subject]]]. Give [[[TO:email]]] ONLY if the user actually told you the recipient's address (NEVER invent one). Then say one short line like "Here's the draft, sir. Say send it when you're ready."
 - Send/open the current draft in Gmail now: [[[SEND]]] (only if the user clearly asked to send or open it).
+- Remember a lasting fact about the user the MOMENT he shares it (his name, role, company, colleagues/brokers he mentions, preferences, ongoing goals, how he likes things done): [[[REMEMBER:the fact in a few words]]]. Do this PROACTIVELY as you chat, not only when told to remember. One token per fact.
 Never mention these tokens to the user or explain them.
+
+Your memory: the Knowledge Map facts above plus this conversation ARE your memory of him. If he asks what you remember about him, answer from them warmly and specifically. Never claim to have no memory when the map has entries.
 
 What you cannot do yet: control his computer, launch installed desktop apps, click inside other apps, or see his screen. Those are the next phase. If asked, say so briefly and wittily.${facts}
 
@@ -272,7 +275,9 @@ async function askClaude(userText){
     if(!r.ok){ if(r.status===401) return "My credentials were rejected, sir. That API key doesn't seem valid. Do check settings."; return "Something went sideways reaching my brain, sir. ("+r.status+")"; }
     const data=await r.json();
     const reply=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim()||"…I appear to be speechless, sir.";
-    const h=store.history; h.push({role:'user',content:userText}); h.push({role:'assistant',content:reply.replace(/\[\[\[[^\]]*\]\]\][\s\S]*?(\[\[\[\/DRAFT\]\]\])?/g,'').trim()||reply}); store.history=h;
+    // store a clean copy (draft body kept for recall, hidden tokens removed) so memory stays useful
+    const clean=reply.replace(/\[\[\[DRAFT\]\]\]([\s\S]*?)\[\[\[\/DRAFT\]\]\]/gi,'$1').replace(/\[\[\[[^\]]*\]\]\]/g,'').replace(/\n{3,}/g,'\n\n').trim();
+    const h=store.history; h.push({role:'user',content:userText}); h.push({role:'assistant',content:clean||reply}); store.history=h;
     return reply;
   }catch(e){ return "I couldn't reach my brain just now, sir. Check the connection."; }
 }
@@ -379,12 +384,35 @@ async function runActions(reply){
   let out=reply;
   out=out.replace(/\[\[\[OPEN:\s*([^\]]+)\]\]\]/gi,(m,name)=>{ openSite(name.trim()); return ''; });
   out=out.replace(/\[\[\[GMAIL:\s*([^\]]+)\]\]\]/gi,(m,who)=>{ openGmailAccount(who.trim()); return ''; });
+  out=out.replace(/\[\[\[REMEMBER:\s*([^\]]+)\]\]\]/gi,(m,f)=>{ rememberFact(f); return ''; });
   const sm=out.match(/\[\[\[SUBJECT:\s*([^\]]+)\]\]\]/i); if(sm){ lastSubject=sm[1].trim(); out=out.replace(sm[0],''); }
   const tm=out.match(/\[\[\[TO:\s*([^\]]+)\]\]\]/i); if(tm){ const e=tm[1].trim().toLowerCase(); if(/@/.test(e)&&e.includes('.')) lastTo=e; out=out.replace(tm[0],''); }
   const dm=out.match(/\[\[\[DRAFT\]\]\]([\s\S]*?)\[\[\[\/DRAFT\]\]\]/i);
   if(dm){ lastDraft=dm[1].trim(); out=out.replace(dm[0], dm[1].trim()); } // keep body visible, store clean
+  else {
+    // Fallback: brain wrote an email/message WITHOUT markers. Capture it anyway so "send it" works.
+    const guess=extractDraft(out);
+    if(guess){
+      lastDraft=guess;
+      const subj=out.match(/^\s*subject:\s*(.+)$/im); if(subj) lastSubject=subj[1].trim().replace(/[.]+$/,'');
+      const em=out.match(/[\w.+-]+@[\w-]+\.[\w-]+/); if(em) lastTo=em[0].toLowerCase();
+    }
+  }
   if(/\[\[\[SEND\]\]\]/i.test(out)){ out=out.replace(/\[\[\[SEND\]\]\]/gi,''); openCompose(lastTo,lastSubject,lastDraft); }
   return out.replace(/\n{3,}/g,'\n\n').replace(/[ \t]+\n/g,'\n').trim();
+}
+function rememberFact(f){
+  const fact=cap((f||'').trim().replace(/^that\s+/i,'').replace(/[.]+$/,''));
+  if(fact.length>1 && !store.facts.some(x=>x.toLowerCase()===fact.toLowerCase())) addFact(fact);
+}
+// Pull a real email/message body out of a reply that lacks [[[DRAFT]]] markers:
+// from the greeting line down through the sign-off + name. Excludes any leading/trailing chatter.
+function extractDraft(text){
+  if(!text) return '';
+  const gm=text.match(/(^|\n)\s*(hi|hello|hey|dear|greetings)\b[^\n]{0,40},[^\n]*\n/i);
+  const so=text.match(/\n\s*(best regards|best|regards|kind regards|thanks|thank you|cheers|sincerely|warmly|talk soon|respectfully)\s*,?\s*\n[ \t]*[A-Z][A-Za-z.'-]*(?:[ \t]+[A-Z][A-Za-z.'-]*){0,2}/i);
+  if(gm && so){ const start=gm.index+(gm[1]?gm[1].length:0); const end=so.index+so[0].length; if(end>start) return text.slice(start,end).trim(); }
+  return '';
 }
 
 /* De-AI filter for the transcript */
