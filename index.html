@@ -304,11 +304,12 @@ function openGmailAccount(who){
   if(!win){ addLinkMsg('Open Gmail →',url); }
   return acct;
 }
-// Opens the small compose popup OVER the inbox (fs=0), pre-filled and ready to send.
+// Opens a compose window pre-filled and ready to send. fs=1 is Gmail's reliable
+// deep-link (fs=0 causes an ERR_TOO_MANY_REDIRECTS loop on a direct navigation).
 function openCompose(to,subject,body,account){
   let u='https://mail.google.com/mail/';
-  if(account && /@/.test(account)) u+='?authuser='+encodeURIComponent(account)+'&view=cm&fs=0';
-  else u+='?view=cm&fs=0';
+  if(account && /@/.test(account)) u+='?authuser='+encodeURIComponent(account)+'&view=cm&fs=1';
+  else u+='?view=cm&fs=1';
   u+='&tf=1'+(to?'&to='+encodeURIComponent(to):'')+(subject?'&su='+encodeURIComponent(subject):'')+(body?'&body='+encodeURIComponent(body):'');
   const win=window.open(u,'_blank');
   if(!win){ addLinkMsg('Open the email in Gmail →',u); return false; }
@@ -333,15 +334,22 @@ function tryLocalSkill(text){
     const sM=rest.match(/\b(?:subject|title|titled|subject line)\b[:\s]+(.+)$/i);
     if(sM){ subject=sM[1].trim().replace(/[.]+$/,''); rest=rest.slice(0,sM.index).trim(); }
     // classify explicit @-emails: after from/on/using/via = sending account, else = recipient
+    const EMAIL=/^[\w.+-]+@[\w.-]+\.[a-z]{2,}$/i;
     let to='', account='';
-    for(const m of rest.matchAll(/([\w.+-]+@[\w-]+\.[\w-]+)/g)){
+    for(const m of rest.matchAll(/([\w.+-]+@[\w.-]+\.[a-z]{2,})/gi)){
       const before=rest.slice(Math.max(0,m.index-16), m.index).toLowerCase();
       if(/\b(from|on|using|via|through)\s*$/.test(before)) account=m[1].toLowerCase();
       else to=m[1].toLowerCase();
     }
-    // spoken recipient after "to" if no typed address
-    if(!to){ const tm=rest.match(/\bto\s+([a-z0-9 ._-]+?(?:\s+(?:at|dot)\s+[a-z0-9 ._-]+)+)/i); if(tm){ const sp=spokenToEmail(tm[1]); if(/@/.test(sp)&&sp.includes('.')) to=sp; } }
+    // spoken recipient after "to": single-word tokens only, accepted only if it forms one tidy address
+    if(!to){
+      const tm=rest.match(/\bto\s+([a-z0-9._-]+(?:\s+(?:at|dot)\s+[a-z0-9._-]+){1,5})\b/i);
+      if(tm){ const sp=spokenToEmail(tm[1]); if(EMAIL.test(sp)) to=sp; }
+    }
     if(!to) to=lastTo;
+    // never let a malformed value reach the recipient/account fields
+    if(to && !EMAIL.test(to)) to='';
+    if(account && !EMAIL.test(account)) account='';
     if(!subject) subject=lastSubject;
     const ok=openCompose(to,subject,lastDraft,account);
     if(!ok) return "Your browser blocked the pop-up, sir. Tap the link, or allow pop-ups for this site.";
