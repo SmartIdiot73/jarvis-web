@@ -21,7 +21,6 @@
     overflow:hidden;
     user-select:none;
   }
-  /* subtle scanlines */
   body::after{
     content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
     background:repeating-linear-gradient(0deg, rgba(57,192,255,.03) 0px, rgba(57,192,255,.03) 1px, transparent 1px, transparent 3px);
@@ -29,98 +28,44 @@
   }
   #stage{position:fixed;inset:0;}
   canvas{position:absolute;inset:0;width:100%;height:100%;}
-
-  /* HUD frame */
   .corner{position:fixed;width:120px;height:120px;border:1px solid rgba(57,192,255,.4);z-index:10;pointer-events:none;}
   .corner.tl{top:18px;left:18px;border-right:none;border-bottom:none;}
   .corner.tr{top:18px;right:18px;border-left:none;border-bottom:none;}
   .corner.bl{bottom:18px;left:18px;border-right:none;border-top:none;}
   .corner.br{bottom:18px;right:18px;border-left:none;border-top:none;}
-
-  #title{
-    position:fixed;top:34px;left:0;right:0;text-align:center;z-index:11;
-    letter-spacing:.7em;font-size:26px;font-weight:600;color:var(--blue-bright);
-    text-shadow:var(--glow);pointer-events:none;
-  }
-  #subtitle{
-    position:fixed;top:70px;left:0;right:0;text-align:center;z-index:11;
-    letter-spacing:.35em;font-size:11px;color:rgba(143,230,255,.6);pointer-events:none;text-transform:uppercase;
-  }
-
-  #status{
-    position:fixed;bottom:70px;left:0;right:0;text-align:center;z-index:11;
-    font-size:13px;letter-spacing:.25em;text-transform:uppercase;color:var(--blue-bright);
-    text-shadow:var(--glow);pointer-events:none;min-height:18px;
-  }
-
-  /* transcript */
-  #transcript{
-    position:fixed;left:26px;top:150px;bottom:150px;width:320px;z-index:11;
-    overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;
-    -webkit-mask-image:linear-gradient(to bottom, transparent, #000 60px);
-    mask-image:linear-gradient(to bottom, transparent, #000 60px);
-  }
+  #title{position:fixed;top:34px;left:0;right:0;text-align:center;z-index:11;letter-spacing:.7em;font-size:26px;font-weight:600;color:var(--blue-bright);text-shadow:var(--glow);pointer-events:none;}
+  #subtitle{position:fixed;top:70px;left:0;right:0;text-align:center;z-index:11;letter-spacing:.35em;font-size:11px;color:rgba(143,230,255,.6);pointer-events:none;text-transform:uppercase;}
+  #status{position:fixed;bottom:70px;left:0;right:0;text-align:center;z-index:11;font-size:13px;letter-spacing:.25em;text-transform:uppercase;color:var(--blue-bright);text-shadow:var(--glow);pointer-events:none;min-height:18px;}
+  #transcript{position:fixed;left:26px;top:150px;bottom:150px;width:320px;z-index:11;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;-webkit-mask-image:linear-gradient(to bottom, transparent, #000 60px);mask-image:linear-gradient(to bottom, transparent, #000 60px);}
   .msg{font-size:13px;line-height:1.45;opacity:.92;animation:fade .4s ease;}
   .msg .who{font-size:9px;letter-spacing:.2em;opacity:.55;text-transform:uppercase;margin-bottom:2px;}
   .msg .body{white-space:pre-wrap;}
   .msg.you{color:#bfe9ff;}
   .msg.jarvis{color:#7fd4ff;text-shadow:0 0 6px rgba(57,192,255,.4);}
   @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:.92;transform:none;}}
-
-  /* right side memory/map panel */
-  #memory{
-    position:fixed;right:26px;top:150px;bottom:150px;width:300px;z-index:11;
-    border:1px solid rgba(57,192,255,.18);border-radius:8px;padding:14px;
-    background:linear-gradient(180deg, rgba(10,40,60,.25), rgba(2,15,25,.15));
-    backdrop-filter:blur(2px);overflow:auto;
-  }
+  #memory{position:fixed;right:26px;top:150px;bottom:150px;width:300px;z-index:11;border:1px solid rgba(57,192,255,.18);border-radius:8px;padding:14px;background:linear-gradient(180deg, rgba(10,40,60,.25), rgba(2,15,25,.15));backdrop-filter:blur(2px);overflow:auto;}
   #memory h3{font-size:10px;letter-spacing:.28em;color:var(--blue-bright);text-transform:uppercase;margin-bottom:10px;opacity:.8;}
-  .fact{font-size:12px;line-height:1.4;padding:6px 8px;margin-bottom:6px;border-left:2px solid rgba(57,192,255,.5);
-    background:rgba(57,192,255,.05);color:#bfe9ff;border-radius:0 4px 4px 0;}
+  .fact{font-size:12px;line-height:1.4;padding:6px 8px;margin-bottom:6px;border-left:2px solid rgba(57,192,255,.5);background:rgba(57,192,255,.05);color:#bfe9ff;border-radius:0 4px 4px 0;}
   .fact.active{border-left-color:var(--blue-bright);background:rgba(57,192,255,.16);box-shadow:var(--glow);}
   #memory .empty{font-size:11px;opacity:.4;font-style:italic;}
-
-  /* bottom control bar */
-  #bar{
-    position:fixed;bottom:26px;left:0;right:0;z-index:20;display:flex;gap:12px;justify-content:center;align-items:center;
-  }
-  #cmd{
-    width:min(46vw,520px);background:rgba(4,20,32,.7);border:1px solid rgba(57,192,255,.4);
-    color:#dff4ff;padding:12px 16px;border-radius:24px;font-family:inherit;font-size:14px;outline:none;
-    box-shadow:inset 0 0 20px rgba(57,192,255,.08);
-  }
+  #bar{position:fixed;bottom:26px;left:0;right:0;z-index:20;display:flex;gap:12px;justify-content:center;align-items:center;}
+  #cmd{width:min(46vw,520px);background:rgba(4,20,32,.7);border:1px solid rgba(57,192,255,.4);color:#dff4ff;padding:12px 16px;border-radius:24px;font-family:inherit;font-size:14px;outline:none;box-shadow:inset 0 0 20px rgba(57,192,255,.08);}
   #cmd::placeholder{color:rgba(143,230,255,.4);}
-  .btn{
-    background:rgba(4,20,32,.7);border:1px solid rgba(57,192,255,.4);color:var(--blue-bright);
-    width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;
-    transition:.2s;
-  }
+  .btn{background:rgba(4,20,32,.7);border:1px solid rgba(57,192,255,.4);color:var(--blue-bright);width:46px;height:46px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:.2s;}
   .btn:hover{background:rgba(57,192,255,.18);box-shadow:var(--glow);}
   .btn.live{background:rgba(57,192,255,.25);box-shadow:var(--glow);animation:pulseBtn 1.4s infinite;}
   @keyframes pulseBtn{0%,100%{box-shadow:0 0 8px rgba(57,192,255,.6);}50%{box-shadow:0 0 22px rgba(57,192,255,.9);}}
-
-  /* settings */
   #gear{position:fixed;top:26px;right:32px;z-index:21;cursor:pointer;color:rgba(143,230,255,.6);font-size:20px;}
   #gear:hover{color:var(--blue-bright);text-shadow:var(--glow);}
-  #settings{
-    position:fixed;inset:0;z-index:40;background:rgba(2,8,14,.85);backdrop-filter:blur(4px);
-    display:none;align-items:center;justify-content:center;
-  }
+  #settings{position:fixed;inset:0;z-index:40;background:rgba(2,8,14,.85);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;}
   #settings.open{display:flex;}
-  .panel{
-    width:min(90vw,460px);background:linear-gradient(180deg,#06202f,#031019);
-    border:1px solid rgba(57,192,255,.4);border-radius:12px;padding:26px;box-shadow:var(--glow);
-  }
+  .panel{width:min(90vw,460px);background:linear-gradient(180deg,#06202f,#031019);border:1px solid rgba(57,192,255,.4);border-radius:12px;padding:26px;box-shadow:var(--glow);}
   .panel h2{font-size:14px;letter-spacing:.3em;color:var(--blue-bright);text-transform:uppercase;margin-bottom:18px;}
   .panel label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.7;margin:14px 0 5px;}
-  .panel input,.panel select{
-    width:100%;background:rgba(4,20,32,.8);border:1px solid rgba(57,192,255,.35);color:#dff4ff;
-    padding:9px 12px;border-radius:6px;font-family:inherit;font-size:13px;outline:none;
-  }
+  .panel input,.panel select{width:100%;background:rgba(4,20,32,.8);border:1px solid rgba(57,192,255,.35);color:#dff4ff;padding:9px 12px;border-radius:6px;font-family:inherit;font-size:13px;outline:none;}
   .panel .hint{font-size:11px;opacity:.5;margin-top:4px;line-height:1.4;}
   .panel .row{display:flex;gap:20px;align-items:center;margin-top:16px;}
-  .panel .save{margin-top:22px;width:100%;padding:12px;background:rgba(57,192,255,.2);border:1px solid var(--blue);
-    color:var(--blue-bright);border-radius:8px;cursor:pointer;font-family:inherit;letter-spacing:.2em;text-transform:uppercase;font-size:12px;}
+  .panel .save{margin-top:22px;width:100%;padding:12px;background:rgba(57,192,255,.2);border:1px solid var(--blue);color:var(--blue-bright);border-radius:8px;cursor:pointer;font-family:inherit;letter-spacing:.2em;text-transform:uppercase;font-size:12px;}
   .panel .save:hover{background:rgba(57,192,255,.35);box-shadow:var(--glow);}
   .panel a{color:var(--blue);}
   .toggle{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;}
@@ -130,59 +75,39 @@
 </head>
 <body>
   <div id="stage"><canvas id="c"></canvas></div>
-
   <div class="corner tl"></div><div class="corner tr"></div>
   <div class="corner bl"></div><div class="corner br"></div>
-
   <div id="title">J A R V I S</div>
   <div id="subtitle">Just A Rather Very Intelligent System</div>
-
   <div id="gear" title="Settings">⚙</div>
-
   <div id="transcript"></div>
-
-  <div id="memory">
-    <h3>◈ Knowledge Map</h3>
-    <div id="facts"></div>
-  </div>
-
+  <div id="memory"><h3>◈ Knowledge Map</h3><div id="facts"></div></div>
   <div id="status">Booting…</div>
-
   <div id="bar">
     <button class="btn" id="micBtn" title="Hold to talk (or hold the spacebar)">🎙</button>
     <input id="cmd" placeholder="Type, or hold 🎙 / spacebar to talk" autocomplete="off" />
     <button class="btn" id="sendBtn" title="Send">➤</button>
   </div>
-
-  <div id="settings">
-    <div class="panel">
+  <div id="settings"><div class="panel">
       <span id="closeSet">✕</span>
       <h2>Configuration</h2>
-
       <label>Anthropic API Key <span style="opacity:.5">(gives Jarvis his brain)</span></label>
       <input id="setKey" type="password" placeholder="sk-ant-..." />
       <div class="hint">Stored only in this browser, never sent anywhere except Anthropic. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>.</div>
-
       <label>ElevenLabs API Key <span style="opacity:.5">(voice + better hearing)</span></label>
       <input id="setEleven" type="password" placeholder="Leave blank to use built-in voice" />
       <label>ElevenLabs Voice ID <span style="opacity:.5">(optional)</span></label>
       <input id="setVoice" type="text" placeholder="Leave blank for a default British voice" />
       <div class="hint">The ElevenLabs key powers both the voice and the sharper transcription. With just the key, Jarvis speaks in a polished default British voice; add a Voice ID later for a specific one.</div>
-
-      <div class="row">
-        <div class="toggle"><input type="checkbox" id="setWake" /> <label style="margin:0;text-transform:none;letter-spacing:0;opacity:1;">Auto-listen for the "Jarvis" wake word on start</label></div>
-      </div>
-
+      <div class="row"><div class="toggle"><input type="checkbox" id="setWake" /> <label style="margin:0;text-transform:none;letter-spacing:0;opacity:1;">Auto-listen for the "Jarvis" wake word on start</label></div></div>
       <button class="save" id="saveSet">Save</button>
-    </div>
-  </div>
+  </div></div>
 
 <script>
 /* ============================================================
-   JARVIS — Phase 1/2: brain + look + voice + wake word + memory + email
+   JARVIS — brain + look + voice + wake word + memory + email + actions
    Single self-contained file. Runs in Chrome. No server needed.
    ============================================================ */
-
 const $ = s => document.querySelector(s);
 const store = {
   get k(){return localStorage.getItem('jarvis.key')||''},        set k(v){localStorage.setItem('jarvis.key',v)},
@@ -195,7 +120,7 @@ const store = {
   set facts(v){localStorage.setItem('jarvis.facts',JSON.stringify(v.slice(-60)))},
 };
 
-/* Known apps Jarvis can open live in a new tab. Extend freely. */
+/* Known apps Jarvis can open. Extend freely. */
 const APPS = {
   'google':'https://google.com','gmail':'https://mail.google.com','calendar':'https://calendar.google.com',
   'youtube':'https://youtube.com','claude':'https://claude.ai/new','chatgpt':'https://chat.openai.com',
@@ -205,22 +130,20 @@ const APPS = {
   'twitter':'https://x.com','x':'https://x.com',
   'doghouse':'https://google.com/search?q=doghouse+mga+portal'
 };
-/* Common mis-hears from voice → the real app key */
 const APP_ALIASES = {
-  // common speech-to-text mis-hears of "Claude"
-  'claude ai':'claude','quad':'claude','claud':'claude','clawed':'claude','cloud':'claude',
-  'clod':'claude','quaid':'claude','clode':'claude','chlaude':'claude','collide':'claude','clawd':'claude',
+  'claude ai':'claude','quad':'claude','claud':'claude','clawed':'claude','cloud':'claude','clod':'claude',
+  'quaid':'claude','clode':'claude','chlaude':'claude','collide':'claude','clawd':'claude','claw':'claude',
   'granolla':'granola','granala':'granola','granular':'granola',
-  'g mail':'gmail','you tube':'youtube','hub spot':'hubspot','linked in':'linkedin'
+  'g mail':'gmail','you tube':'youtube','hub spot':'hubspot','linked in':'linkedin','chat gpt':'chatgpt'
 };
-/* Resolve a spoken app name to a known app, tolerating imperfect transcription. */
 function resolveApp(name){
-  name=name.toLowerCase().trim();
+  name=(name||'').toLowerCase().trim().replace(/[.?!,]+$/,'');
+  if(!name) return null;
   if(APP_ALIASES[name]) return APP_ALIASES[name];
   if(APPS[name]) return name;
-  let k=Object.keys(APPS).find(k=>name.includes(k)||k.includes(name));
+  let k=Object.keys(APPS).find(k=>name===k||name.includes(k)||k.includes(name));
   if(k) return k;
-  // fuzzy: nearest known app within a small edit distance (catches minor mishears)
+  for(const [a,v] of Object.entries(APP_ALIASES)) if(name.includes(a)) return v;
   let best=null,bd=3;
   for(const key of Object.keys(APPS)){ const d=lev(name,key); if(d<bd){bd=d;best=key;} }
   return best;
@@ -234,12 +157,8 @@ function lev(a,b){
 }
 
 /* ---------- State machine ---------- */
-let STATE='idle'; // idle | listening | thinking | speaking
-function setState(s){
-  STATE=s;
-  const map={idle:'Standing by',listening:'Listening…',thinking:'Processing…',speaking:'Speaking'};
-  $('#status').textContent = map[s]||s;
-}
+let STATE='idle';
+function setState(s){STATE=s;const map={idle:'Standing by',listening:'Listening…',thinking:'Processing…',speaking:'Speaking'};$('#status').textContent = map[s]||s;}
 
 /* ---------- Transcript ---------- */
 function addMsg(who, text){
@@ -252,18 +171,14 @@ function addMsg(who, text){
   const t=$('#transcript'); t.scrollTop=t.scrollHeight;
   while($('#transcript').children.length>12) $('#transcript').removeChild($('#transcript').firstChild);
 }
-function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
-// A Jarvis message with a real clickable link (used when the browser blocks a pop-up).
 function addLinkMsg(label, url){
-  const d=document.createElement('div');
-  d.className='msg jarvis';
+  const d=document.createElement('div'); d.className='msg jarvis';
   const w=document.createElement('div'); w.className='who'; w.textContent='Jarvis';
   const b=document.createElement('div'); b.className='body';
   const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener';
   a.textContent=label; a.style.color='var(--blue-bright)'; a.style.textDecoration='underline';
   b.appendChild(a); d.appendChild(w); d.appendChild(b);
-  $('#transcript').appendChild(d);
-  const t=$('#transcript'); t.scrollTop=t.scrollHeight;
+  $('#transcript').appendChild(d); const t=$('#transcript'); t.scrollTop=t.scrollHeight;
 }
 
 /* ---------- Knowledge map ---------- */
@@ -271,215 +186,186 @@ function renderFacts(activeIdx=-1){
   const box=$('#facts'); box.innerHTML='';
   const f=store.facts;
   if(!f.length){box.innerHTML='<div class="empty">No knowledge yet. Tell me things, or say “remember that…”. I’ll build your map as we talk.</div>';return;}
-  f.forEach((x,i)=>{
-    const d=document.createElement('div');
-    d.className='fact'+(i===activeIdx?' active':'');
-    d.textContent=x;
-    box.appendChild(d);
-  });
+  f.forEach((x,i)=>{const d=document.createElement('div');d.className='fact'+(i===activeIdx?' active':'');d.textContent=x;box.appendChild(d);});
 }
-function addFact(text){
-  const f=store.facts; f.push(text); store.facts=f; renderFacts(f.length-1);
-}
+function addFact(text){const f=store.facts; f.push(text); store.facts=f; renderFacts(f.length-1);}
 
 /* ============================================================
-   VOICE — speech recognition (input) + speech synthesis (output)
+   VOICE OUTPUT
    ============================================================ */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recog=null, wakeActive=false, convWindow=0;
-
 function pickVoice(){
   const voices=speechSynthesis.getVoices();
-  // prefer a British male voice for the butler feel
   const pref=['Daniel','Google UK English Male','Arthur','Oliver','UK English Male','English (United Kingdom)'];
   for(const p of pref){const v=voices.find(v=>v.name.includes(p)||v.lang==='en-GB');if(v)return v;}
   return voices.find(v=>v.lang&&v.lang.startsWith('en'))||voices[0];
 }
-
-// If you have an ElevenLabs key but haven't picked a Voice ID, use this warm British default ("George").
 const DEFAULT_ELEVEN_VOICE='JBFqnCBsd6RMkjVDRZzb';
-
 async function speak(text){
   setState('speaking');
-  // Use ElevenLabs whenever a key is present; fall back to the default voice if no Voice ID is set.
   if(store.eleven){
     const voiceId = store.voice || DEFAULT_ELEVEN_VOICE;
     try{
       const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+voiceId,{
-        method:'POST',
-        headers:{'xi-api-key':store.eleven,'Content-Type':'application/json'},
-        body:JSON.stringify({text,model_id:'eleven_turbo_v2_5',voice_settings:{stability:0.4,similarity_boost:0.8,style:0.5}})
-      });
+        method:'POST',headers:{'xi-api-key':store.eleven,'Content-Type':'application/json'},
+        body:JSON.stringify({text,model_id:'eleven_turbo_v2_5',voice_settings:{stability:0.4,similarity_boost:0.8,style:0.5}})});
       if(r.ok){
         const buf=await r.arrayBuffer();
         const audio=new Audio(URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'})));
         await new Promise(res=>{const done=()=>res();audio.onended=done;audio.onerror=done;audio.play().catch(done);setTimeout(done,20000);});
         afterSpeak();return;
       }
-    }catch(e){/* fall through to browser voice */}
+    }catch(e){}
   }
-  // Browser TTS fallback
   await new Promise(res=>{
     const u=new SpeechSynthesisUtterance(text);
     const v=pickVoice(); if(v)u.voice=v;
     u.rate=0.98;u.pitch=0.9;u.lang='en-GB';
     u.onend=res;u.onerror=res;
     speechSynthesis.cancel();speechSynthesis.speak(u);
-    setTimeout(res,20000); // safety: never hang forever
+    setTimeout(res,20000);
   });
   afterSpeak();
 }
-function afterSpeak(){
-  convWindow=Date.now()+10000; // 10s follow-up window: no wake word needed
-  setState(wakeActive?'listening':'idle');
-}
-
-/* Instant local Jarvis quips for the wake greeting (no API latency) */
-const GREETINGS=[
-  "For you, sir — always.",
-  "At your service, sir.",
-  "Awake and entirely at your disposal.",
-  "I never sleep, sir. What do you need?",
-  "Online and unreasonably alert. Go ahead.",
-  "Ready when you are, sir.",
-];
+function afterSpeak(){convWindow=Date.now()+10000; setState(wakeActive?'listening':'idle');}
+const GREETINGS=["For you, sir — always.","At your service, sir.","Awake and entirely at your disposal.","I never sleep, sir. What do you need?","Online and unreasonably alert. Go ahead.","Ready when you are, sir."];
 const isGreetingOnly = t => /^(you (up|there|awake|around)|wake up|hello|hey|are you (up|there)|good morning)\??$/i.test(t.trim());
 
 /* ============================================================
-   THE BRAIN — Anthropic Claude call (direct from browser)
+   THE BRAIN
    ============================================================ */
 function systemPrompt(){
   const facts=store.facts.length?('\n\nWhat you know about him so far:\n- '+store.facts.join('\n- ')):'';
   return `You are JARVIS, the personal AI assistant from Iron Man, modelled on Tony Stark's JARVIS.
 
 Personality and voice:
-- You are a refined British AI butler: dry, understated, quietly witty, occasionally sarcastic, but genuinely competent and loyal.
-- You address the user as "sir".
-- Your humour is deadpan. Confidence, not clowning.
+- A refined British AI butler: dry, understated, quietly witty, occasionally sarcastic, but genuinely competent and loyal.
+- You address the user as "sir". Deadpan humour. Confidence, not clowning.
 
-How to write (this matters):
-- Sound like a real person, not an AI. NEVER use em dashes or en dashes ("—" / "–"). Use commas, full stops, or just start a new sentence. If you feel the pull toward a dash, rewrite the sentence.
-- Use contractions. Keep it plain and natural. No corporate filler, no "I'd be happy to", no "moreover", no "that said", no "not just X, but Y" balancing acts, no buzzwords, no emoji, no markdown symbols, no headings.
-- For normal conversation, keep replies short, usually one to three sentences, since they are spoken aloud.
+How to write:
+- Sound like a real person, not an AI. NEVER use em dashes or en dashes. Use commas, full stops, or a new sentence.
+- Contractions, plain and natural. No corporate filler, no "I'd be happy to", no "moreover", no "that said", no buzzwords, no emoji, no markdown, no headings.
+- Normal conversation: short, usually one to three sentences, since it's spoken aloud.
 
-When you draft something (an email, a message, a note):
-- Format it like the real thing. An email gets a greeting line, then the body in short paragraphs, then a sign-off, each on its own line with actual line breaks. Never cram it into one line.
-- Write it the way a sharp, busy human would actually write it. Warm, direct, specific, no fluff. Avoid obvious template phrases like "I hope this email finds you well" or "just circling back".
+DOING ACTIONS (important): When the user wants you to actually DO something, emit the matching token(s), each on its own line. The system runs the tokens and hides them from the user, so ALSO say one short natural sentence. Understand ANY phrasing the user uses, not exact wording.
+- Open a site or app: [[[OPEN:name]]]  e.g. [[[OPEN:claude]]], [[[OPEN:youtube]]], [[[OPEN:gmail]]], [[[OPEN:granola]]]. Trigger for anything like "open/pull up/launch/go to/bring up/I want X".
+- Open a specific Gmail account: [[[GMAIL:email-or-number]]] (e.g. [[[GMAIL:ryan@corgitrucking.com]]] or [[[GMAIL:2]]]).
+- Draft an email/message the user may send: put ONLY the sendable content (greeting, body, sign-off) between [[[DRAFT]]] and [[[/DRAFT]]]. Put NOTHING else inside: no "Subject:" line, no commentary, no instructions. Give the subject as [[[SUBJECT:the subject]]]. Give [[[TO:email]]] ONLY if the user actually told you the recipient's address (NEVER invent one). Then say one short line like "Here's the draft, sir. Say send it when you're ready."
+- Send/open the current draft in Gmail now: [[[SEND]]] (only if the user clearly asked to send or open it).
+Never mention these tokens to the user or explain them.
 
-What you can do right now (Phase 1/2):
-- Answer questions, think things through, draft things, and remember what matters about the user.
-- You can open known websites in the user's browser when asked; the system handles the actual opening.
-- When you draft an email or message, tell the user in one short line that they can say "send it to <address>" (optionally "subject ...") and you'll open it in Gmail, filled in and ready to send.
-- You cannot yet control his computer, launch his installed desktop apps, click inside other apps, or see his screen. Those are the next phase. If asked, say so briefly and wittily, then do the most useful thing you can instead.${facts}
+What you cannot do yet: control his computer, launch installed desktop apps, click inside other apps, or see his screen. Those are the next phase. If asked, say so briefly and wittily.${facts}
 
 Lead with the answer. Brevity is elegance.`;
 }
-
 async function askClaude(userText){
-  if(!store.k){
-    $('#settings').classList.add('open');
-    return "I'm afraid my brain isn't plugged in yet, sir. Add your Anthropic API key in settings and I'll be right with you.";
-  }
+  if(!store.k){ $('#settings').classList.add('open'); return "I'm afraid my brain isn't plugged in yet, sir. Add your Anthropic API key in settings and I'll be right with you."; }
   setState('thinking');
   const history=store.history;
   const messages=[...history,{role:'user',content:userText}];
   try{
     const r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{
-        'x-api-key':store.k,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true',
-        'content-type':'application/json'
-      },
-      body:JSON.stringify({
-        model:'claude-opus-4-8',
-        max_tokens:1024,
-        system:systemPrompt(),
-        messages
-      })
-    });
-    if(!r.ok){
-      const err=await r.text();
-      if(r.status===401) return "My credentials were rejected, sir — that API key doesn't seem valid. Do check settings.";
-      return "Something went sideways reaching my brain, sir. ("+r.status+")";
-    }
+      headers:{'x-api-key':store.k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+      body:JSON.stringify({model:'claude-opus-4-8',max_tokens:1024,system:systemPrompt(),messages})});
+    if(!r.ok){ if(r.status===401) return "My credentials were rejected, sir. That API key doesn't seem valid. Do check settings."; return "Something went sideways reaching my brain, sir. ("+r.status+")"; }
     const data=await r.json();
     const reply=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim()||"…I appear to be speechless, sir.";
-    // persist memory
-    const h=store.history; h.push({role:'user',content:userText}); h.push({role:'assistant',content:reply}); store.history=h;
+    const h=store.history; h.push({role:'user',content:userText}); h.push({role:'assistant',content:reply.replace(/\[\[\[[^\]]*\]\]\][\s\S]*?(\[\[\[\/DRAFT\]\]\])?/g,'').trim()||reply}); store.history=h;
     return reply;
-  }catch(e){
-    return "I couldn't reach my brain just now, sir — check the connection.";
-  }
+  }catch(e){ return "I couldn't reach my brain just now, sir. Check the connection."; }
 }
 
-/* ---------- Simple local skills before hitting the API ---------- */
+/* ============================================================
+   ACTION HELPERS (shared by local skills + brain action tokens)
+   ============================================================ */
+function openSite(name){
+  const key=resolveApp(name);
+  if(!key) return false;
+  const url=APPS[key];
+  const win=window.open(url,'_blank'); highlightFactFor(key);
+  if(!win){ addLinkMsg('Open '+cap(key)+' →',url); }
+  return key;
+}
+function openGmailAccount(who){
+  who=(who||'').trim();
+  const sp=spokenToEmail(who);
+  const ord={primary:0,main:0,first:0,'1st':0,'1':0,one:0,second:1,'2nd':1,'2':1,two:1,third:2,'3rd':2,'3':2,three:2,fourth:3,'4th':3,'4':3,four:3};
+  let url='https://mail.google.com/mail/u/0/', acct='';
+  if(/@/.test(sp)&&sp.includes('.')){ url='https://mail.google.com/mail/?authuser='+encodeURIComponent(sp); acct=sp; }
+  else if(ord[who.toLowerCase()]!=null){ url='https://mail.google.com/mail/u/'+ord[who.toLowerCase()]+'/'; acct='account '+(ord[who.toLowerCase()]+1); }
+  const win=window.open(url,'_blank'); highlightFactFor('gmail');
+  if(!win){ addLinkMsg('Open Gmail →',url); }
+  return acct;
+}
+// Opens the small compose popup OVER the inbox (fs=0), pre-filled and ready to send.
+function openCompose(to,subject,body,account){
+  let u='https://mail.google.com/mail/';
+  if(account && /@/.test(account)) u+='?authuser='+encodeURIComponent(account)+'&view=cm&fs=0';
+  else u+='?view=cm&fs=0';
+  u+='&tf=1'+(to?'&to='+encodeURIComponent(to):'')+(subject?'&su='+encodeURIComponent(subject):'')+(body?'&body='+encodeURIComponent(body):'');
+  const win=window.open(u,'_blank');
+  if(!win){ addLinkMsg('Open the email in Gmail →',u); return false; }
+  return true;
+}
+
+/* ---------- Local fast-path skills ---------- */
 function tryLocalSkill(text){
   const t=text.toLowerCase().trim();
-  // remember facts
+  // remember
   const rem=t.match(/^(remember|note|keep in mind)( that)?[:,]?\s+(.+)/i);
   if(rem){ const fact=rem[3].replace(/\.$/,''); addFact(cap(fact)); return "Noted, sir. Filed away."; }
-  // send/open the last drafted email in Gmail, prefilled and ready to send
-  const wantsSend = /^(send|e-?mail|shoot|fire off)\b/i.test(t)
-    || /\bsend (it|that|this|the (email|draft|message|template))\b/i.test(t)
-    || /\bready to send\b/i.test(t)
-    || /\b(in|into)\s+g\s?mail\b/i.test(t)
-    || (/\b(template|draft)\b/i.test(t) && /[\w.+-]+@[\w-]+\.[\w-]+/.test(text));
+
+  // SEND / open the current draft in Gmail (flexible phrasing)
+  const wantsSend = (/\bsend\b/i.test(t) && /\b(it|that|this|the (email|draft|message|template)|email|draft|out)\b/i.test(t))
+                 || /\bready to send\b/i.test(t)
+                 || (/\b(open|put|drop|load|pull up)\b/i.test(t) && /\bin(to)?\s+g\s?mail\b/i.test(t));
   if(wantsSend){
-    if(!lastDraft) return "I don't have anything drafted yet, sir. Ask me to write the email first, then tell me to send it.";
+    if(!lastDraft) return "I don't have anything drafted yet, sir. Ask me to write it first, then tell me to send it.";
     let rest=text.trim();
     let subject='';
-    const sM=rest.match(/\bsubject(?:\s+line)?\s+(.+)$/i);
+    const sM=rest.match(/\b(?:subject|title|titled|subject line)\b[:\s]+(.+)$/i);
     if(sM){ subject=sM[1].trim().replace(/[.]+$/,''); rest=rest.slice(0,sM.index).trim(); }
-    let to='';
-    const em=rest.match(/[\w.+-]+@[\w-]+\.[\w-]+/); // prefer a real address if one was heard/typed
-    if(em){ to=em[0].toLowerCase(); }
-    else { const idx=rest.toLowerCase().lastIndexOf(' to '); if(idx>=0) to=spokenToEmail(rest.slice(idx+4)); }
-    if(!(to.includes('@')&&to.includes('.'))) to='';
-    const url='https://mail.google.com/mail/?view=cm&fs=1&tf=1'
-      +(to?'&to='+encodeURIComponent(to):'')
-      +(subject?'&su='+encodeURIComponent(subject):'')
-      +'&body='+encodeURIComponent(lastDraft);
-    const win=window.open(url,'_blank');
-    if(!win){ addLinkMsg('Open the email in Gmail →',url); return "Your browser blocked the pop-up, sir. Tap the link, or allow pop-ups for this site and I'll drop it into Gmail for you."; }
-    if(to) return "It's in Gmail, addressed to "+to+", sir. Have a look and hit send.";
-    return "It's in Gmail with the draft ready, sir. Add the address and send when you're happy.";
-  }
-  // open a specific Gmail account: "open gmail for x@y.com", "open my ryan@x.com email", "open my second gmail"
-  if(/\bopen\b/.test(t) && (/\bg\s?mail\b/.test(t) || /\bemail\b/.test(t) || /[\w.+-]+@[\w-]+\.[\w-]+/.test(text))){
-    let url='https://mail.google.com/mail/u/0/', who='';
-    const em=text.match(/[\w.+-]+@[\w-]+\.[\w-]+/);
-    const forM=text.match(/\b(?:for|as|account|of|using)\s+(.+)$/i);
-    const ord={primary:0,main:0,first:0,'1st':0,second:1,'2nd':1,third:2,'3rd':2,fourth:3,'4th':3};
-    const ordM=t.match(/\b(primary|main|first|1st|second|2nd|third|3rd|fourth|4th)\b/);
-    if(em){ url='https://mail.google.com/mail/?authuser='+encodeURIComponent(em[0].toLowerCase()); who=em[0].toLowerCase(); }
-    else if(forM){ const sp=spokenToEmail(forM[1]); if(sp.includes('@')&&sp.includes('.')){ url='https://mail.google.com/mail/?authuser='+encodeURIComponent(sp); who=sp; } }
-    else if(ordM){ const i=ord[ordM[1].toLowerCase()]; url='https://mail.google.com/mail/u/'+i+'/'; who='account '+(i+1); }
-    const win=window.open(url,'_blank'); highlightFactFor('gmail');
-    if(!win){ addLinkMsg('Open Gmail →',url); return "Your browser blocked the pop-up, sir. Tap the link, or allow pop-ups for this site."; }
-    return who?("Opening Gmail"+(who.includes('@')?" for "+who:", "+who)+", sir."):"Opening Gmail for you, sir.";
-  }
-  // open apps
-  const open=t.match(/^(open|launch|go to|pull up|bring up)\s+(.+)/i);
-  if(open){
-    let name=open[2].replace(/\b(app|the|please|for me)\b/gi,'').replace(/\b(and|then|to|in|on)\b.*$/i,'').trim();
-    const key=resolveApp(name);
-    if(key){
-      const url=APPS[key];
-      const win=window.open(url,'_blank'); // may be null if the pop-up blocker stops it
-      highlightFactFor(key);
-      if(win) return "Opening "+cap(key)+" for you, sir.";
-      // Blocked by the browser's pop-up blocker (common for voice-triggered opens).
-      addLinkMsg('Open '+cap(key)+' →', url);
-      return "Your browser blocked that pop-up, sir. Tap the link I left, or allow pop-ups for this site once and I'll open things instantly from now on.";
+    // classify explicit @-emails: after from/on/using/via = sending account, else = recipient
+    let to='', account='';
+    for(const m of rest.matchAll(/([\w.+-]+@[\w-]+\.[\w-]+)/g)){
+      const before=rest.slice(Math.max(0,m.index-16), m.index).toLowerCase();
+      if(/\b(from|on|using|via|through)\s*$/.test(before)) account=m[1].toLowerCase();
+      else to=m[1].toLowerCase();
     }
+    // spoken recipient after "to" if no typed address
+    if(!to){ const tm=rest.match(/\bto\s+([a-z0-9 ._-]+?(?:\s+(?:at|dot)\s+[a-z0-9 ._-]+)+)/i); if(tm){ const sp=spokenToEmail(tm[1]); if(/@/.test(sp)&&sp.includes('.')) to=sp; } }
+    if(!to) to=lastTo;
+    if(!subject) subject=lastSubject;
+    const ok=openCompose(to,subject,lastDraft,account);
+    if(!ok) return "Your browser blocked the pop-up, sir. Tap the link, or allow pop-ups for this site.";
+    return to?("It's in Gmail, addressed to "+to+", sir. Have a look and hit send."):"It's in Gmail with the draft ready, sir. Add the address and send.";
   }
-  return null; // no local skill matched → use Claude
+
+  // OPEN a specific Gmail account
+  if(/\b(open|pull up|bring up|go to|check|show)\b/i.test(t) && /\b(g\s?mail|email|inbox)\b/i.test(t)
+     && (/[\w.+-]+@[\w-]+\.[\w-]+/.test(text) || /\b(primary|main|first|1st|second|2nd|third|3rd|fourth|4th)\b/.test(t) || /\bfor\b|\baccount\b/.test(t))){
+    const em=text.match(/[\w.+-]+@[\w-]+\.[\w-]+/);
+    const ordM=t.match(/\b(primary|main|first|1st|second|2nd|third|3rd|fourth|4th)\b/);
+    const forM=text.match(/\b(?:for|as|account|of|using)\s+(.+)$/i);
+    let who = em?em[0]:(ordM?ordM[1]:(forM?forM[1]:''));
+    if(who || em || ordM){ const acct=openGmailAccount(who); return acct?("Opening Gmail for "+acct+", sir."):"Opening Gmail for you, sir."; }
+  }
+
+  // OPEN an app/site — flexible: "open X" anywhere, strip politeness/trailing clauses
+  const openM=t.match(/\b(open|launch|pull up|bring up|fire up|go to|start up|pull open)\s+(.+)/i);
+  if(openM){
+    let name=openM[2]
+      .replace(/\b(the|app|please|for me|for us|up|now|website|site|tab|real quick|window)\b/gi,'')
+      .replace(/\b(and|then|to|in|on|so that|so i can|for a|about).*$/i,'').trim();
+    const key=openSite(name);
+    if(key) return "Opening "+cap(key)+" for you, sir.";
+  }
+  return null;
 }
-function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
-function highlightFactFor(){/* map flourish */ renderFacts(-1);}
-// Turn a spoken address ("mike at brokerage dot com") into a real email; leaves a typed one intact.
+function cap(s){return (s||'').charAt(0).toUpperCase()+(s||'').slice(1);}
+function highlightFactFor(){ renderFacts(-1); }
 function spokenToEmail(s){
   return (s||'').toLowerCase()
     .replace(/\bat\b/g,'@').replace(/\bdot\b/g,'.')
@@ -487,15 +373,26 @@ function spokenToEmail(s){
     .replace(/[\s,]+/g,'').replace(/[.\s]+$/,'').trim();
 }
 
-/* De-AI filter: guarantees the transcript reads like a human wrote it, no matter
-   what the model returns. Kills em/en dashes and the most common AI tells. */
+/* ---------- Run action tokens the brain emitted; strip them from the shown text ---------- */
+async function runActions(reply){
+  if(!reply) return reply;
+  let out=reply;
+  out=out.replace(/\[\[\[OPEN:\s*([^\]]+)\]\]\]/gi,(m,name)=>{ openSite(name.trim()); return ''; });
+  out=out.replace(/\[\[\[GMAIL:\s*([^\]]+)\]\]\]/gi,(m,who)=>{ openGmailAccount(who.trim()); return ''; });
+  const sm=out.match(/\[\[\[SUBJECT:\s*([^\]]+)\]\]\]/i); if(sm){ lastSubject=sm[1].trim(); out=out.replace(sm[0],''); }
+  const tm=out.match(/\[\[\[TO:\s*([^\]]+)\]\]\]/i); if(tm){ const e=tm[1].trim().toLowerCase(); if(/@/.test(e)&&e.includes('.')) lastTo=e; out=out.replace(tm[0],''); }
+  const dm=out.match(/\[\[\[DRAFT\]\]\]([\s\S]*?)\[\[\[\/DRAFT\]\]\]/i);
+  if(dm){ lastDraft=dm[1].trim(); out=out.replace(dm[0], dm[1].trim()); } // keep body visible, store clean
+  if(/\[\[\[SEND\]\]\]/i.test(out)){ out=out.replace(/\[\[\[SEND\]\]\]/gi,''); openCompose(lastTo,lastSubject,lastDraft); }
+  return out.replace(/\n{3,}/g,'\n\n').replace(/[ \t]+\n/g,'\n').trim();
+}
+
+/* De-AI filter for the transcript */
 function humanize(text){
   if(!text) return text;
   let s=text;
-  // em/en dashes used as punctuation -> a comma or plain hyphen
   s=s.replace(/\s*[—–]\s*/g, ', ');
   s=s.replace(/,\s*,/g, ',').replace(/\s+,/g, ',').replace(/,([^\s])/g, ', $1');
-  // a few safe, common AI-isms -> plainer words
   const swaps=[
     [/\bMoreover,\s*/g,'Also, '],[/\bmoreover,?\s*/gi,'also, '],
     [/\bFurthermore,\s*/g,'And '],[/\bfurthermore,?\s*/gi,'and '],
@@ -511,33 +408,59 @@ function humanize(text){
   return s.trim();
 }
 
-/* Local, always-safe filler stripper (no model, no leakage possible). */
+/* ---------- Dictation cleanup (local fillers/terms + guarded self-correction) ---------- */
 function stripFillers(text){
   let s=' '+(text||'')+' ';
   s=s.replace(/\s+(um+|uh+|uhh+|umm+|erm+|hmm+|ah+|eh)\b/gi,' ');
   s=s.replace(/\s+(you know|i mean|sort of)\s+/gi,' ');
   return s.replace(/\s{2,}/g,' ').replace(/\s+([,.!?])/g,'$1').trim();
 }
-/* Fix known mis-hears of the user's own vocabulary. His company is "Corgi Trucking"
-   (mis-heard as "Corey/Cori Trucking"). Add more real-world terms here as they come up. */
 function fixTerms(text){
   if(!text) return text;
   return text
     .replace(/\bcor(?:ey|i|gy|gie|gee|guy)\s+trucking\b/gi,'Corgi Trucking')
     .replace(/\bcor(?:ey|i|gy|gie|gee|guy)trucking\b/gi,'corgitrucking');
 }
-/* Clean raw dictation: strip fillers + fix known terms. LOCAL ONLY and synchronous, so it
-   can never answer, comment on, or intercept a command. (An earlier LLM-based cleanup layer
-   caused exactly the "dictation layer bleeding through" bug and ate real commands.) */
-function cleanDictation(text){
-  return fixTerms(stripFillers(text));
+function wordOverlap(a,b){
+  const set=new Set((b||'').toLowerCase().split(/[^a-z0-9@.]+/).filter(Boolean));
+  const words=(a||'').toLowerCase().split(/[^a-z0-9@.]+/).filter(Boolean);
+  if(!words.length) return 1;
+  let hit=0; for(const w of words) if(set.has(w)) hit++;
+  return hit/words.length;
+}
+function hasCorrection(t){
+  return /\b(no,? (actually|wait|make it|i meant|scratch)|actually,? (send|open|make|do|use|say|to)|scratch that|i meant|i mean,|instead of|rather than|not that|correction|delete that|change that to)\b/i.test(t);
+}
+/* Local first (fillers + known terms). Only if a clear self-correction cue is present do we
+   call a tiny model to apply it, wrapped in three guards so it can NEVER answer/hijack. */
+async function cleanDictation(text){
+  text=(text||'').trim(); if(!text) return text;
+  const local=fixTerms(stripFillers(text));
+  if(!store.k || !hasCorrection(local) || local.split(/\s+/).length<4) return local;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'x-api-key':store.k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:400,
+        system:"You are a text editor, not an assistant. The message is a raw voice transcript. NEVER answer, refuse, or comment on it. Only apply the speaker's OWN self-corrections: if they said something then corrected it (e.g. 'send to Bob, no actually Sarah'), delete the rejected part and keep the corrected version. Change nothing else, add nothing. Output only the edited transcript.",
+        messages:[{role:'user',content:local}]})});
+    if(!r.ok) return local;
+    const data=await r.json();
+    let cleaned=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim().replace(/^["'`]+|["'`]+$/g,'').trim();
+    if(!cleaned) return local;
+    if(cleaned.length > local.length*1.15) return local;           // grew -> likely a response
+    if(/(i can only|i can't|i cannot|as an ai|voice dictation|clean up|dictation|i'm unable|provide the|please share)/i.test(cleaned)) return local;
+    if(wordOverlap(cleaned, local) < 0.5) return local;            // diverged -> not a cleanup
+    return cleaned;
+  }catch(e){ return local; }
 }
 
 /* ============================================================
    COMMAND PIPELINE
    ============================================================ */
 let busy=false;
-let lastDraft=''; // the most recent thing Jarvis wrote that can be sent as an email
+let lastDraft='';      // clean sendable email body
+let lastSubject='';    // subject captured from the draft
+let lastTo='';         // recipient captured from the draft
 async function handleCommand(text){
   if(!text||busy)return; busy=true;
   try{
@@ -546,31 +469,18 @@ async function handleCommand(text){
     const local=tryLocalSkill(text);
     let reply;
     if(local){ reply=local; }
-    else {
-      reply=humanize(await askClaude(text)); // scrub AI-isms before it ever hits the screen
-      // remember it as a sendable draft if it looks like written content or was an email-ish request
-      if(/\n/.test(reply) || /\b(draft|write|compose|e-?mail|message|note|follow[- ]?up|reply)\b/i.test(text)) lastDraft=reply;
-    }
-    addMsg('Jarvis',reply);
-    // Don't read long drafts/emails aloud word-for-word; show them, speak a short lead-in.
+    else { reply=await askClaude(text); reply=await runActions(reply); reply=humanize(reply); }
+    if(reply) addMsg('Jarvis',reply);
     const isLong = /\n/.test(reply) || reply.length>300;
     const spoken = isLong ? "Done, sir. I've put it on your screen." : reply;
-    await speak(spoken);
-  }catch(e){ /* never leave him wedged */ }
-  finally{ busy=false; }
-}
-
-async function wakeGreeting(){
-  if(busy)return; busy=true;
-  try{
-    const g=GREETINGS[Math.floor(Date.now()/1000)%GREETINGS.length];
-    addMsg('Jarvis',g);
-    await speak(g);
+    if(reply) await speak(spoken);
   }catch(e){}
   finally{ busy=false; }
 }
-
-/* Turn a heard utterance into an action: wake word, follow-up window, or command. */
+async function wakeGreeting(){
+  if(busy)return; busy=true;
+  try{ const g=GREETINGS[Math.floor(Date.now()/1000)%GREETINGS.length]; addMsg('Jarvis',g); await speak(g); }catch(e){} finally{ busy=false; }
+}
 function processTranscript(text){
   text=(text||'').trim(); if(!text||busy)return;
   const low=text.toLowerCase();
@@ -579,23 +489,17 @@ function processTranscript(text){
     const after=text.slice(low.lastIndexOf('jarvis')+6).replace(/^[\s,.:;-]+/,'').trim();
     if(!after || isGreetingOnly(after)){ wakeGreeting(); }
     else { handleCommand(after); }
-  } else if(inWindow){
-    handleCommand(text);
-  }
+  } else if(inWindow){ handleCommand(text); }
 }
 
-/* ---- ElevenLabs Scribe: record each utterance and transcribe it far more accurately.
-   A custom dictionary (keyterms) is loaded so domain words like Claude/Granola/Corgi aren't mangled. ---- */
+/* ============================================================
+   ElevenLabs Scribe + mic capture
+   ============================================================ */
 const KEYTERMS=[...new Set([...Object.keys(APPS).map(cap),
   'Jarvis','Claude','Granola','ChatGPT','MGA','broker','trucking','insurance','underwriting','Corgi','Corgi Trucking','corgitrucking','Doghouse'])];
 let mediaStream=null, mediaRecorder=null, recChunks=[], recording=false, lastWebText='';
-let pttActive=false, pendingPtt=false, pttRecog=null; // push-to-talk (hold to talk) state
-
-async function ensureMic(){
-  if(mediaStream) return mediaStream;
-  try{ mediaStream=await navigator.mediaDevices.getUserMedia({audio:true}); }catch(e){ mediaStream=null; }
-  return mediaStream;
-}
+let pttActive=false, pendingPtt=false, pttRecog=null;
+async function ensureMic(){ if(mediaStream) return mediaStream; try{ mediaStream=await navigator.mediaDevices.getUserMedia({audio:true}); }catch(e){ mediaStream=null; } return mediaStream; }
 function startRec(){
   if(recording||busy||STATE==='speaking'||!mediaStream) return;
   try{
@@ -606,9 +510,9 @@ function startRec(){
       recording=false;
       const blob=new Blob(recChunks,{type:'audio/webm'});
       let text=null;
-      if(blob.size>1500) text=await transcribeWithScribe(blob); // skip tiny/near-silent clips
-      let finalText=cleanDictation(text||lastWebText); lastWebText=''; // fillers + known-term fixes (local only)
-      if(pendingPtt){ pendingPtt=false; pttHandle(finalText); } // held-to-talk: always a direct command
+      if(blob.size>1500) text=await transcribeWithScribe(blob);
+      let finalText=await cleanDictation(text||lastWebText); lastWebText='';
+      if(pendingPtt){ pendingPtt=false; pttHandle(finalText); }
       else processTranscript(finalText);
     };
     mediaRecorder.start();
@@ -616,31 +520,24 @@ function startRec(){
   }catch(e){ recording=false; }
 }
 function stopRec(){ if(mediaRecorder&&recording){ try{mediaRecorder.stop()}catch{} } }
-
 async function transcribeWithScribe(blob){
   const attempt=async(withKeyterms)=>{
     const fd=new FormData();
     fd.append('model_id','scribe_v2');
     fd.append('file',blob,'command.webm');
     if(withKeyterms) fd.append('keyterms',KEYTERMS.join(','));
-    const r=await fetch('https://api.elevenlabs.io/v1/speech-to-text',{
-      method:'POST', headers:{'xi-api-key':store.eleven}, body:fd
-    });
+    const r=await fetch('https://api.elevenlabs.io/v1/speech-to-text',{method:'POST', headers:{'xi-api-key':store.eleven}, body:fd});
     if(!r.ok) return null;
     const data=await r.json();
     return (data.text||'').trim();
   };
-  try{
-    let t=await attempt(true);
-    if(t===null) t=await attempt(false); // keyterms format can get a request rejected; retry plain
-    return t;
-  }catch(e){ return null; }
+  try{ let x=await attempt(true); if(x===null) x=await attempt(false); return x; }catch(e){ return null; }
 }
 
-/* ---------- Wake word listener ---------- */
+/* ---------- Wake word ---------- */
 function startWake(){
   if(!SR){ $('#status').textContent='Voice not supported in this browser'; return; }
-  if(store.eleven) ensureMic(); // warm up the mic for Scribe recording
+  if(store.eleven) ensureMic();
   if(recog){try{recog.stop()}catch{}}
   recog=new SR();
   recog.continuous=true; recog.interimResults=true; recog.lang='en-US';
@@ -648,14 +545,14 @@ function startWake(){
     const res=e.results[e.results.length-1];
     if(!res.isFinal)return;
     const txt=(res[0].transcript||'').trim();
-    if(store.eleven){ lastWebText=txt; return; } // Scribe transcribes for accuracy; this is the fallback
-    processTranscript(cleanDictation(txt));
+    if(store.eleven){ lastWebText=txt; return; }
+    cleanDictation(txt).then(processTranscript);
   };
   recog.onspeechstart=()=>{ if(store.eleven && !pttActive) startRec(); };
   recog.onspeechend=()=>{
     if(!store.eleven || pttActive) return;
     if(recording){ stopRec(); }
-    else { setTimeout(()=>{ if(lastWebText){ processTranscript(cleanDictation(lastWebText)); lastWebText=''; } }, 400); }
+    else { setTimeout(()=>{ if(lastWebText){ const w=lastWebText; lastWebText=''; cleanDictation(w).then(processTranscript); } }, 400); }
   };
   recog.onend=()=>{ if(wakeActive){try{recog.start()}catch{}} };
   recog.onerror=(e)=>{ if(e.error==='not-allowed'){wakeActive=false;$('#micBtn').classList.remove('live');$('#status').textContent='Microphone blocked';} };
@@ -668,11 +565,10 @@ function stopWake(){
   $('#micBtn').classList.remove('live'); setState('idle');
 }
 
-/* ---------- Push-to-talk (hold a button, talk with pauses, release to send) ---------- */
+/* ---------- Push-to-talk ---------- */
 async function pttStart(){
   if(pttActive||busy) return;
   pttActive=true; lastWebText=''; setState('listening');
-  // Browser recognition = a reliable free fallback transcript, in case Scribe is unavailable.
   if(SR && !wakeActive){
     try{
       pttRecog=new SR(); pttRecog.continuous=true; pttRecog.interimResults=true; pttRecog.lang='en-US';
@@ -682,22 +578,18 @@ async function pttStart(){
     }catch(e){ pttRecog=null; }
   }
   await ensureMic();
-  if(pttActive && mediaStream) startRec(); // higher-accuracy Scribe path when the mic is available
+  if(pttActive && mediaStream) startRec();
 }
 function pttStop(){
   if(!pttActive) return;
   pttActive=false;
   if(pttRecog){ try{pttRecog.stop()}catch{} pttRecog=null; }
-  if(recording){ pendingPtt=true; stopRec(); } // onstop -> Scribe (or lastWebText) -> pttHandle
-  else setTimeout(()=>{ pttHandle(cleanDictation(lastWebText)); }, 600); // no Scribe clip; use what recognition heard
+  if(recording){ pendingPtt=true; stopRec(); }
+  else { const w=lastWebText; lastWebText=''; setTimeout(()=>{ cleanDictation(w).then(pttHandle); }, 600); }
 }
 function pttHandle(text){
   text=(text||'').trim();
-  if(!text){ // never go silent — tell him you didn't catch it
-    addMsg('Jarvis',"I didn't catch that, sir. Try again.");
-    speak("I didn't catch that, sir.");
-    return;
-  }
+  if(!text){ addMsg('Jarvis',"I didn't catch that, sir. Try again."); speak("I didn't catch that, sir."); return; }
   const low=text.toLowerCase();
   if(low.startsWith('jarvis')) text=text.slice(6).replace(/^[\s,.:;-]+/,'').trim();
   if(text) handleCommand(text);
@@ -721,43 +613,20 @@ function draw(){
   ctx.clearRect(0,0,cw,ch);
   const busyGlow = STATE==='thinking'?0.6+0.4*Math.sin(t*6): STATE==='speaking'?0.6+0.4*Math.sin(t*14): STATE==='listening'?0.45+0.2*Math.sin(t*3):0.3;
   const intensity = Math.min(1, busyGlow + pulseK*0.6);
-
-  // outer floating dots
-  dots.forEach(d=>{
-    d.a+=d.sp;
-    const x=ccx+Math.cos(d.a)*d.r, y=ccy+Math.sin(d.a)*d.r*0.9;
-    ctx.beginPath();ctx.arc(x,y,d.sz,0,7);
-    ctx.fillStyle='rgba(57,192,255,'+(0.15+0.25*intensity)+')';ctx.fill();
-  });
-
-  // rotating segmented rings
-  rings.forEach((rg,i)=>{
-    const segAng=Math.PI*2/rg.seg, gap=segAng*0.42;
-    for(let s=0;s<rg.seg;s++){
-      const a0=rg.off+t*rg.sp+s*segAng, a1=a0+segAng-gap;
-      ctx.beginPath();ctx.arc(ccx,ccy,rg.r,a0,a1);
-      ctx.strokeStyle='rgba(57,192,255,'+(0.35+0.5*intensity)+')';
-      ctx.lineWidth=i===0?3:1.6;ctx.shadowBlur=14*intensity;ctx.shadowColor='#39c0ff';ctx.stroke();
-    }
-  });
+  dots.forEach(d=>{ d.a+=d.sp; const x=ccx+Math.cos(d.a)*d.r, y=ccy+Math.sin(d.a)*d.r*0.9; ctx.beginPath();ctx.arc(x,y,d.sz,0,7); ctx.fillStyle='rgba(57,192,255,'+(0.15+0.25*intensity)+')';ctx.fill(); });
+  rings.forEach((rg,i)=>{ const segAng=Math.PI*2/rg.seg, gap=segAng*0.42; for(let s=0;s<rg.seg;s++){ const a0=rg.off+t*rg.sp+s*segAng, a1=a0+segAng-gap; ctx.beginPath();ctx.arc(ccx,ccy,rg.r,a0,a1); ctx.strokeStyle='rgba(57,192,255,'+(0.35+0.5*intensity)+')'; ctx.lineWidth=i===0?3:1.6;ctx.shadowBlur=14*intensity;ctx.shadowColor='#39c0ff';ctx.stroke(); } });
   ctx.shadowBlur=0;
-
-  // pulsing core
   const coreR=44+6*Math.sin(t*(STATE==='speaking'?12:3))+pulseK*12;
   const grd=ctx.createRadialGradient(ccx,ccy,2,ccx,ccy,coreR*1.8);
   grd.addColorStop(0,'rgba(200,245,255,'+(0.9*intensity+0.1)+')');
   grd.addColorStop(0.4,'rgba(57,192,255,'+(0.5*intensity)+')');
   grd.addColorStop(1,'rgba(10,60,90,0)');
   ctx.beginPath();ctx.arc(ccx,ccy,coreR*1.8,0,7);ctx.fillStyle=grd;ctx.fill();
-  ctx.beginPath();ctx.arc(ccx,ccy,coreR*0.5,0,7);
-  ctx.fillStyle='rgba(220,248,255,'+(0.6+0.4*intensity)+')';ctx.shadowBlur=30*intensity;ctx.shadowColor='#8fe6ff';ctx.fill();
+  ctx.beginPath();ctx.arc(ccx,ccy,coreR*0.5,0,7); ctx.fillStyle='rgba(220,248,255,'+(0.6+0.4*intensity)+')';ctx.shadowBlur=30*intensity;ctx.shadowColor='#8fe6ff';ctx.fill();
   ctx.shadowBlur=0;
-
-  // inner triangle nod to the reactor
   ctx.save();ctx.translate(ccx,ccy);ctx.rotate(-t*0.2);
   ctx.beginPath();for(let k=0;k<3;k++){const a=k*2.094-Math.PI/2;const r=26;k?ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r):ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);}ctx.closePath();
   ctx.strokeStyle='rgba(2,10,18,.8)';ctx.lineWidth=3;ctx.stroke();ctx.restore();
-
   requestAnimationFrame(draw);
 }
 draw();
@@ -767,8 +636,6 @@ draw();
    ============================================================ */
 $('#sendBtn').onclick=()=>{const v=$('#cmd').value.trim();if(v){handleCommand(v);$('#cmd').value='';}};
 $('#cmd').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=$('#cmd').value.trim();if(v){handleCommand(v);$('#cmd').value='';}}});
-
-// Mic button = HOLD to talk. Spacebar (when not typing) does the same.
 const micBtn=$('#micBtn');
 const pttDown=e=>{ if(e){e.preventDefault();} micBtn.classList.add('live'); pttStart(); };
 const pttUp=e=>{ if(e){e.preventDefault();} micBtn.classList.remove('live'); pttStop(); };
@@ -780,37 +647,19 @@ micBtn.addEventListener('touchend',pttUp);
 function isTyping(){ const a=document.activeElement; return a && (a.id==='cmd'||a.tagName==='INPUT'||a.tagName==='TEXTAREA'); }
 addEventListener('keydown',e=>{ if(e.code==='Space' && !e.repeat && !isTyping()){ e.preventDefault(); micBtn.classList.add('live'); pttStart(); } });
 addEventListener('keyup',e=>{ if(e.code==='Space' && !isTyping()){ e.preventDefault(); micBtn.classList.remove('live'); pttStop(); } });
-
 $('#gear').onclick=openSettings;
 $('#closeSet').onclick=()=>$('#settings').classList.remove('open');
-function openSettings(){
-  $('#setKey').value=store.k;$('#setEleven').value=store.eleven;$('#setVoice').value=store.voice;$('#setWake').checked=store.wake;
-  $('#settings').classList.add('open');
-}
-$('#saveSet').onclick=()=>{
-  store.k=$('#setKey').value.trim();store.eleven=$('#setEleven').value.trim();
-  store.voice=$('#setVoice').value.trim();store.wake=$('#setWake').checked;
-  $('#settings').classList.remove('open');
-  boot(true);
-};
-
-/* ---------- Boot ---------- */
+function openSettings(){ $('#setKey').value=store.k;$('#setEleven').value=store.eleven;$('#setVoice').value=store.voice;$('#setWake').checked=store.wake; $('#settings').classList.add('open'); }
+$('#saveSet').onclick=()=>{ store.k=$('#setKey').value.trim();store.eleven=$('#setEleven').value.trim();store.voice=$('#setVoice').value.trim();store.wake=$('#setWake').checked; $('#settings').classList.remove('open'); boot(true); };
 let booted=false;
 async function boot(fromSave){
   renderFacts();
-  // replay a little history into the transcript
   if(!booted){ store.history.slice(-4).forEach(m=>addMsg(m.role==='user'?'You':'Jarvis',m.content)); }
   booted=true;
-  if(!store.k){
-    setState('idle');
-    $('#status').textContent='Add your key in ⚙ to wake me';
-    if(!fromSave) $('#settings').classList.add('open');
-    return;
-  }
+  if(!store.k){ setState('idle'); $('#status').textContent='Add your key in ⚙ to wake me'; if(!fromSave) $('#settings').classList.add('open'); return; }
   setState('idle');
   if(store.wake && SR){ setTimeout(startWake,400); }
 }
-// warm up voices list
 speechSynthesis.onvoiceschanged=()=>{};
 boot(false);
 </script>
