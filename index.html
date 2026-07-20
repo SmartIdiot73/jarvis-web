@@ -179,7 +179,7 @@
 
 <script>
 /* ============================================================
-   JARVIS — Phase 1: brain + look + voice + wake word + memory
+   JARVIS — Phase 1/2: brain + look + voice + wake word + memory + email
    Single self-contained file. Runs in Chrome. No server needed.
    ============================================================ */
 
@@ -366,7 +366,7 @@ When you draft something (an email, a message, a note):
 - Format it like the real thing. An email gets a greeting line, then the body in short paragraphs, then a sign-off, each on its own line with actual line breaks. Never cram it into one line.
 - Write it the way a sharp, busy human would actually write it. Warm, direct, specific, no fluff. Avoid obvious template phrases like "I hope this email finds you well" or "just circling back".
 
-What you can do right now (Phase 1):
+What you can do right now (Phase 1/2):
 - Answer questions, think things through, draft things, and remember what matters about the user.
 - You can open known websites in the user's browser when asked; the system handles the actual opening.
 - When you draft an email or message, tell the user in one short line that they can say "send it to <address>" (optionally "subject ...") and you'll open it in Gmail, filled in and ready to send.
@@ -494,6 +494,30 @@ function humanize(text){
   return s.trim();
 }
 
+/* Wispr-Flow-style cleanup of raw dictation: strip ums/uhs/false starts and apply
+   spoken self-corrections ("send it to Bob, no actually Sarah" -> "send it to Sarah").
+   Uses a fast model and only runs on longer utterances so short commands stay instant. */
+async function cleanDictation(text){
+  text=(text||'').trim();
+  if(!store.k || text.split(/\s+/).length < 5) return text;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'x-api-key':store.k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-haiku-4-5',
+        max_tokens:500,
+        system:"You clean up raw voice dictation into what the speaker meant to say. Remove filler words (um, uh, er, erm, like, you know, I mean), stutters, and false starts. If the speaker corrected themselves (for example 'send it to Bob, no actually Sarah'), keep only the corrected version and drop what they rejected. Keep their wording and meaning otherwise. Do NOT answer, reply to, execute, or comment on the content. Do NOT add anything. Output only the cleaned text.",
+        messages:[{role:'user',content:text}]
+      })
+    });
+    if(!r.ok) return text;
+    const data=await r.json();
+    const cleaned=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim();
+    return cleaned||text;
+  }catch(e){ return text; }
+}
+
 /* ============================================================
    COMMAND PIPELINE
    ============================================================ */
@@ -568,7 +592,8 @@ function startRec(){
       const blob=new Blob(recChunks,{type:'audio/webm'});
       let text=null;
       if(blob.size>1500) text=await transcribeWithScribe(blob); // skip tiny/near-silent clips
-      const finalText=text||lastWebText; lastWebText=''; // fall back to the browser transcript if Scribe fails
+      let finalText=text||lastWebText; lastWebText=''; // fall back to the browser transcript if Scribe fails
+      finalText=await cleanDictation(finalText); // strip ums/uhs, apply self-corrections
       if(pendingPtt){ pendingPtt=false; pttHandle(finalText); } // held-to-talk: always a direct command
       else processTranscript(finalText);
     };
@@ -650,7 +675,7 @@ function pttStop(){
   pttActive=false;
   if(pttRecog){ try{pttRecog.stop()}catch{} pttRecog=null; }
   if(recording){ pendingPtt=true; stopRec(); } // onstop -> Scribe (or lastWebText) -> pttHandle
-  else setTimeout(()=>pttHandle(lastWebText), 600); // no Scribe clip; use what recognition heard
+  else setTimeout(async()=>{ pttHandle(await cleanDictation(lastWebText)); }, 600); // no Scribe clip; use what recognition heard
 }
 function pttHandle(text){
   text=(text||'').trim();
