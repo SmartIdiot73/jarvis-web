@@ -369,6 +369,7 @@ When you draft something (an email, a message, a note):
 What you can do right now (Phase 1):
 - Answer questions, think things through, draft things, and remember what matters about the user.
 - You can open known websites in the user's browser when asked; the system handles the actual opening.
+- When you draft an email or message, tell the user in one short line that they can say "send it to <address>" (optionally "subject ...") and you'll open it in Gmail, filled in and ready to send.
 - You cannot yet control his computer, launch his installed desktop apps, click inside other apps, or see his screen. Those are the next phase. If asked, say so briefly and wittily, then do the most useful thing you can instead.${facts}
 
 Lead with the answer. Brevity is elegance.`;
@@ -419,6 +420,29 @@ function tryLocalSkill(text){
   // remember facts
   const rem=t.match(/^(remember|note|keep in mind)( that)?[:,]?\s+(.+)/i);
   if(rem){ const fact=rem[3].replace(/\.$/,''); addFact(cap(fact)); return "Noted, sir. Filed away."; }
+  // send/open the last drafted email in Gmail, prefilled and ready to send
+  const wantsSend = /^(send|e-?mail|shoot|fire off)\b/i.test(t)
+    || /\b(open|put|drop|load|throw)\b.*\bin\s+g\s?mail\b/i.test(t)
+    || /\bin\s+gmail\b/i.test(t);
+  if(wantsSend){
+    if(!lastDraft) return "I don't have anything drafted yet, sir. Ask me to write the email first, then tell me to send it.";
+    let rest=text.replace(/^(send|e-?mail|shoot|fire off)\b/i,'')
+                 .replace(/^\s*(it|that|this|the (email|draft|message))\b/i,'').trim();
+    let subject='';
+    const sM=rest.match(/\bsubject(?:\s+line)?\s+(.+)$/i);
+    if(sM){ subject=sM[1].trim().replace(/[.]$/,''); rest=rest.slice(0,sM.index).trim(); }
+    let to='';
+    const toM=rest.match(/\bto\s+(.+)$/i);
+    if(toM){ to=spokenToEmail(toM[1]); if(!(to.includes('@')&&to.includes('.'))) to=''; }
+    const url='https://mail.google.com/mail/?view=cm&fs=1&tf=1'
+      +(to?'&to='+encodeURIComponent(to):'')
+      +(subject?'&su='+encodeURIComponent(subject):'')
+      +'&body='+encodeURIComponent(lastDraft);
+    const win=window.open(url,'_blank');
+    if(!win){ addLinkMsg('Open the email in Gmail →',url); return "Your browser blocked the pop-up, sir. Tap the link, or allow pop-ups for this site and I'll drop it into Gmail for you."; }
+    if(to) return "It's in Gmail, addressed to "+to+", sir. Have a look and hit send.";
+    return "It's in Gmail with the draft ready, sir. Add the address and send when you're happy.";
+  }
   // open apps
   const open=t.match(/^(open|launch|go to|pull up|bring up)\s+(.+)/i);
   if(open){
@@ -438,6 +462,13 @@ function tryLocalSkill(text){
 }
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function highlightFactFor(){/* map flourish */ renderFacts(-1);}
+// Turn a spoken address ("mike at brokerage dot com") into a real email; leaves a typed one intact.
+function spokenToEmail(s){
+  return (s||'').toLowerCase()
+    .replace(/\bat\b/g,'@').replace(/\bdot\b/g,'.')
+    .replace(/\bunderscore\b/g,'_').replace(/\bdash\b/g,'-')
+    .replace(/[\s,]+/g,'').replace(/[.\s]+$/,'').trim();
+}
 
 /* De-AI filter: guarantees the transcript reads like a human wrote it, no matter
    what the model returns. Kills em/en dashes and the most common AI tells. */
@@ -467,6 +498,7 @@ function humanize(text){
    COMMAND PIPELINE
    ============================================================ */
 let busy=false;
+let lastDraft=''; // the most recent thing Jarvis wrote that can be sent as an email
 async function handleCommand(text){
   if(!text||busy)return; busy=true;
   try{
@@ -475,7 +507,11 @@ async function handleCommand(text){
     const local=tryLocalSkill(text);
     let reply;
     if(local){ reply=local; }
-    else { reply=humanize(await askClaude(text)); } // scrub AI-isms before it ever hits the screen
+    else {
+      reply=humanize(await askClaude(text)); // scrub AI-isms before it ever hits the screen
+      // remember it as a sendable draft if it looks like written content or was an email-ish request
+      if(/\n/.test(reply) || /\b(draft|write|compose|e-?mail|message|note|follow[- ]?up|reply)\b/i.test(text)) lastDraft=reply;
+    }
     addMsg('Jarvis',reply);
     // Don't read long drafts/emails aloud word-for-word; show them, speak a short lead-in.
     const isLong = /\n/.test(reply) || reply.length>300;
